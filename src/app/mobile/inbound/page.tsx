@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { ResultPanel } from "@/components/result-panel";
+import { ScanCodeField } from "@/components/scan-code-field";
 import { decodeActionResult } from "@/lib/action-result";
-import { inboundMotorAction } from "@/lib/actions/motors";
+import { mobileInboundMotorAction } from "@/lib/actions/motors";
 import { requireCurrentUser } from "@/lib/auth";
 
 function toURLSearchParams(params: Record<string, string | undefined>) {
@@ -9,31 +11,27 @@ function toURLSearchParams(params: Record<string, string | undefined>) {
   );
 }
 
-export default async function InboundPage({
+export default async function MobileInboundPage({
   searchParams
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   await requireCurrentUser();
-  const params = await searchParams;
-  const result = decodeActionResult(toURLSearchParams(params));
+  const result = decodeActionResult(toURLSearchParams(await searchParams));
 
   return (
-    <>
+    <main className="mobile-shell">
       <div className="page-head">
         <div>
-          <h1>电机入库</h1>
-          <p>扫码枪通常会把编码输入到当前输入框，也可以手动输入编码。</p>
+          <h1>扫码入库</h1>
+          <p>扫描或输入编码后，电机会标记为在库。</p>
         </div>
       </div>
 
       <ResultPanel result={result} />
 
-      <form className="panel form" action={inboundMotorAction}>
-        <div className="field">
-          <label htmlFor="scannedCode">扫码编码</label>
-          <input id="scannedCode" name="scannedCode" required autoFocus placeholder="例如 GM6020-0001" />
-        </div>
+      <form className="panel form" action={mobileInboundMotorAction}>
+        <ScanCodeField />
         <div className="field">
           <label htmlFor="remark">备注</label>
           <textarea id="remark" name="remark" />
@@ -42,6 +40,10 @@ export default async function InboundPage({
           确认入库
         </button>
       </form>
-    </>
+
+      <Link className="button secondary" href="/mobile">
+        返回现场入口
+      </Link>
+    </main>
   );
 }

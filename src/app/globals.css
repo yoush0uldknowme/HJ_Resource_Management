@@ -299,6 +299,32 @@ th {
   background: #fff;
 }
 
+.label-sheet {
+  display: grid;
+  place-items: start;
+  gap: 16px;
+}
+
+.print-label {
+  width: 280px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  text-align: center;
+}
+
+.label-title {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.label-code {
+  margin: 6px 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
 .login-page {
   min-height: 100vh;
   display: grid;
@@ -312,6 +338,64 @@ th {
 
 .error {
   color: var(--danger);
+}
+
+.result-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.result-panel h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.result-panel p {
+  margin: 0 0 12px;
+}
+
+.result-panel.success {
+  border-color: #88c7b4;
+  background: #effaf6;
+}
+
+.result-panel.error {
+  border-color: #efb1a9;
+  background: #fff3f1;
+}
+
+.mobile-shell {
+  max-width: 520px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.mobile-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.scan-field {
+  display: grid;
+  gap: 8px;
+}
+
+.scan-field input {
+  min-height: 48px;
+  font-size: 18px;
+}
+
+.motor-summary {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
 }
 
 @media (max-width: 860px) {
@@ -332,5 +416,29 @@ th {
 
   .content {
     padding: 18px;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .sidebar,
+  .print-hidden {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block;
+  }
+
+  .content {
+    padding: 0;
+  }
+
+  .print-label {
+    border: 1px solid #000;
+    page-break-inside: avoid;
   }
 }

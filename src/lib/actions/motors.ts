@@ -5,16 +5,22 @@ import { redirect } from "next/navigation";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { encodeActionResult, type ActionResult } from "@/lib/action-result";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { applyInbound, applyOutbound } from "@/lib/motor-flow";
+import { applyInbound, applyOutbound, MotorFlowError } from "@/lib/motor-flow";
 import { buildMotorCode, motorCodeRange } from "@/lib/motor-code";
+import { findMotorByScannedCode, normalizeScannedCode } from "@/lib/motor-lookup";
 
 const createMotorSchema = z.object({
   name: z.string().min(1),
   model: z.string().min(1),
   remark: z.string().optional()
 });
+
+function resultUrl(pathname: string, result: ActionResult) {
+  return `${pathname}?${encodeActionResult(result)}`;
+}
 
 async function savePhoto(file: File, motorId: number, photoType: string, uploadedBy: string) {
   if (!file || file.size === 0) return;
@@ -75,25 +81,32 @@ export async function createMotorAction(formData: FormData) {
   redirect(`/motors/${motor.id}`);
 }
 
-async function findMotorByScannedCode(scannedCode: string) {
-  const code = scannedCode.trim();
-  if (!code) {
-    throw new Error("scanned code is required");
-  }
-
-  return prisma.motor.findFirstOrThrow({
-    where: {
-      OR: [{ motorCode: code }, { snCode: code }]
-    }
-  });
-}
-
-export async function inboundMotorAction(formData: FormData) {
+async function performInbound(formData: FormData, returnPath: string) {
   const user = await requireCurrentUser();
-  const scannedCode = String(formData.get("scannedCode") ?? "").trim();
+  const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const remark = String(formData.get("remark") ?? "").trim();
 
-  const motor = await findMotorByScannedCode(scannedCode);
+  if (!scannedCode) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "入库失败",
+        message: "请先扫码或输入电机编码。"
+      })
+    );
+  }
+
+  const motor = await findMotorByScannedCode(prisma, scannedCode);
+  if (!motor) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "未找到电机",
+        message: `没有找到编码为 ${scannedCode} 的电机。`
+      })
+    );
+  }
+
   const next = applyInbound(
     { status: motor.status, currentLocation: motor.currentLocation },
     { operator: user.username, remark }
@@ -108,22 +121,78 @@ export async function inboundMotorAction(formData: FormData) {
     }
   });
 
+  revalidatePath("/motors");
+  revalidatePath("/logs");
   revalidatePath(`/motors/${motor.id}`);
-  redirect(`/motors/${motor.id}`);
+  redirect(
+    resultUrl(returnPath, {
+      type: "success",
+      title: "入库成功",
+      message: `${motor.motorCode} 已入库。`,
+      motorId: motor.id,
+      motorCode: motor.motorCode
+    })
+  );
 }
 
-export async function outboundMotorAction(formData: FormData) {
+async function performOutbound(formData: FormData, returnPath: string) {
   const user = await requireCurrentUser();
-  const scannedCode = String(formData.get("scannedCode") ?? "").trim();
+  const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const issuedBy = String(formData.get("issuedBy") ?? "").trim();
   const vehicle = String(formData.get("vehicle") ?? "").trim();
   const remark = String(formData.get("remark") ?? "").trim();
 
-  const motor = await findMotorByScannedCode(scannedCode);
-  const next = applyOutbound(
-    { status: motor.status, currentLocation: motor.currentLocation },
-    { operator: user.username, issuedBy, vehicle, remark }
-  );
+  if (!scannedCode) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "出库失败",
+        message: "请先扫码或输入电机编码。"
+      })
+    );
+  }
+
+  if (!issuedBy || !vehicle) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "出库失败",
+        message: "请填写出库人和使用车辆。"
+      })
+    );
+  }
+
+  const motor = await findMotorByScannedCode(prisma, scannedCode);
+  if (!motor) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "未找到电机",
+        message: `没有找到编码为 ${scannedCode} 的电机。`
+      })
+    );
+  }
+
+  let next;
+  try {
+    next = applyOutbound(
+      { status: motor.status, currentLocation: motor.currentLocation },
+      { operator: user.username, issuedBy, vehicle, remark }
+    );
+  } catch (error) {
+    if (error instanceof MotorFlowError) {
+      redirect(
+        resultUrl(returnPath, {
+          type: "error",
+          title: "出库失败",
+          message: `${error.message}。当前状态：${motor.status}。`,
+          motorId: motor.id,
+          motorCode: motor.motorCode
+        })
+      );
+    }
+    throw error;
+  }
 
   await prisma.motor.update({
     where: { id: motor.id },
@@ -134,6 +203,68 @@ export async function outboundMotorAction(formData: FormData) {
     }
   });
 
+  revalidatePath("/motors");
+  revalidatePath("/logs");
   revalidatePath(`/motors/${motor.id}`);
-  redirect(`/motors/${motor.id}`);
+  redirect(
+    resultUrl(returnPath, {
+      type: "success",
+      title: "出库成功",
+      message: `${motor.motorCode} 已出库给 ${issuedBy}，车辆：${vehicle}。`,
+      motorId: motor.id,
+      motorCode: motor.motorCode
+    })
+  );
+}
+
+export async function inboundMotorAction(formData: FormData) {
+  await performInbound(formData, "/motors/inbound");
+}
+
+export async function outboundMotorAction(formData: FormData) {
+  await performOutbound(formData, "/motors/outbound");
+}
+
+export async function mobileInboundMotorAction(formData: FormData) {
+  await performInbound(formData, "/mobile/inbound");
+}
+
+export async function mobileOutboundMotorAction(formData: FormData) {
+  await performOutbound(formData, "/mobile/outbound");
+}
+
+export async function mobileLookupMotorAction(formData: FormData) {
+  await requireCurrentUser();
+  const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
+
+  if (!scannedCode) {
+    redirect(
+      resultUrl("/mobile/scan", {
+        type: "error",
+        title: "查询失败",
+        message: "请先扫码或输入电机编码。"
+      })
+    );
+  }
+
+  const motor = await findMotorByScannedCode(prisma, scannedCode);
+  if (!motor) {
+    redirect(
+      resultUrl("/mobile/scan", {
+        type: "error",
+        title: "未找到电机",
+        message: `没有找到编码为 ${scannedCode} 的电机。`
+      })
+    );
+  }
+
+  redirect(
+    resultUrl("/mobile/scan", {
+      type: "success",
+      title: "已找到电机",
+      message: `${motor.motorCode} / ${motor.model} / 当前状态：${motor.status}`,
+      motorId: motor.id,
+      motorCode: motor.motorCode
+    })
+  );
 }

@@ -39,6 +39,9 @@ export default async function MotorDetailPage({
         </div>
         <div className="toolbar">
           <CopyButton value={motor.motorCode} />
+          <Link className="button secondary" href={`/motors/${motor.id}/label`}>
+            打印标签
+          </Link>
           <Link className="button secondary" href="/motors/inbound">
             入库
           </Link>
@@ -56,7 +59,7 @@ export default async function MotorDetailPage({
             <span className="badge">{motorStatusLabel(motor.status)}</span>
           </div>
           <div className="kv">
-            <strong>状态位置</strong>
+            <strong>库位 / 去向</strong>
             <span>{motor.currentLocation ?? "-"}</span>
           </div>
           <div className="kv">
@@ -76,7 +79,7 @@ export default async function MotorDetailPage({
             <div className="barcode-preview" dangerouslySetInnerHTML={{ __html: code128Svg }} />
           </div>
           <p className="muted">
-            当前打标机可复制编码到本地软件后按 Code128 打印；二维码作为后续更小标签方案预留。
+            当前可以复制编码到本地打标软件按 Code128 打印；二维码作为后续小尺寸标签方案预留。
           </p>
         </div>
       </section>
