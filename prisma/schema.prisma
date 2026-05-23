@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  role         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model Motor {
+  id              Int                @id @default(autoincrement())
+  motorCode       String             @unique
+  name            String
+  model           String
+  brand           String?
+  snCode          String?
+  batchNo         String?
+  supplier        String?
+  purchaseDate    DateTime?
+  status          String             @default("draft")
+  currentLocation String?
+  remark          String?
+  createdBy       String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  photos          MotorPhoto[]
+  transactions    MotorTransaction[]
+}
+
+model MotorPhoto {
+  id         Int      @id @default(autoincrement())
+  motorId    Int
+  motor      Motor    @relation(fields: [motorId], references: [id], onDelete: Cascade)
+  photoPath  String
+  photoType  String
+  uploadedBy String
+  uploadedAt DateTime @default(now())
+}
+
+model MotorTransaction {
+  id              Int      @id @default(autoincrement())
+  motorId         Int
+  motor           Motor    @relation(fields: [motorId], references: [id], onDelete: Cascade)
+  transactionType String
+  operator        String
+  targetPerson    String?
+  location        String?
+  purpose         String?
+  remark          String?
+  createdAt       DateTime @default(now())
+}
