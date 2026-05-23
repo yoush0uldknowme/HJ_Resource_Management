@@ -45,7 +45,7 @@ export default async function MotorsPage({
       <div className="page-head">
         <div>
           <h1>电机列表</h1>
-          <p>按编码、型号、SN、状态查询当前电机。</p>
+          <p>按编码、型号、SN、名称和状态查找当前电机。</p>
         </div>
         <Link className="button" href="/motors/new">
           新建电机

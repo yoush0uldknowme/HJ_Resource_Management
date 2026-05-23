@@ -39,6 +39,6 @@ describe("motor flow transitions", () => {
         { status: "checked_out", currentLocation: "Lab 2" },
         { operator: "admin", issuedBy: "张三", vehicle: "英雄车" }
       )
-    ).toThrow("only in-stock motors can be checked out");
+    ).toThrow("只有在库电机可以出库");
   });
 });

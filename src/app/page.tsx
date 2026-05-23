@@ -17,7 +17,7 @@ export default async function DashboardPage() {
       <div className="page-head">
         <div>
           <h1>首页概览</h1>
-          <p>先跑通电机建档、入库、出库和留痕闭环。</p>
+          <p>展示电机建档、标签、入库、出库和留痕闭环的当前状态。</p>
         </div>
         <Link className="button" href="/motors/new">
           新建电机

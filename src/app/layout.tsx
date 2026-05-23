@@ -6,7 +6,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "HJ 资源管理",
-  description: "电机资源管理试点系统"
+  description: "电机资源管理完整 demo"
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +20,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <aside className="sidebar">
               <div className="brand">
                 <strong>HJ 资源管理</strong>
-                <span>电机试点 MVP</span>
+                <span>电机试点 Demo</span>
               </div>
               <nav className="nav">
                 <Link href="/">首页概览</Link>
@@ -28,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <Link href="/motors/new">新建电机</Link>
                 <Link href="/motors/inbound">入库</Link>
                 <Link href="/motors/outbound">出库</Link>
+                <Link href="/mobile">手机端入口</Link>
                 <Link href="/logs">操作记录</Link>
                 <form action={logoutAction}>
                   <button className="logout-button" type="submit">

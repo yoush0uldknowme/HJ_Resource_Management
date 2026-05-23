@@ -9,7 +9,7 @@ export default async function NewMotorPage() {
       <div className="page-head">
         <div>
           <h1>新建电机</h1>
-          <p>保存后系统按型号自动生成内部编码，例如 GM6020-0001。</p>
+          <p>保存后系统会按型号自动生成内部编码，例如 GM6020-0001。</p>
         </div>
       </div>
 
