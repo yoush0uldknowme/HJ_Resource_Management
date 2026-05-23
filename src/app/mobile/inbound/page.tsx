@@ -3,7 +3,7 @@ import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
 import { decodeActionResult } from "@/lib/action-result";
 import { mobileInboundMotorAction } from "@/lib/actions/motors";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 function toURLSearchParams(params: Record<string, string | undefined>) {
   return new URLSearchParams(
@@ -16,7 +16,7 @@ export default async function MobileInboundPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireCurrentUser();
+  await requireAdmin();
   const result = decodeActionResult(toURLSearchParams(await searchParams));
 
   return (

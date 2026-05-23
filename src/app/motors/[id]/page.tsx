@@ -3,7 +3,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/copy-button";
-import { requireCurrentUser } from "@/lib/auth";
+import { canManageMotors, requireCurrentUser } from "@/lib/auth";
 import { renderCode128Svg } from "@/lib/code128";
 import { prisma } from "@/lib/db";
 import { motorStatusLabel, transactionLabel } from "@/lib/status";
@@ -13,7 +13,8 @@ export default async function MotorDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireCurrentUser();
+  const user = await requireCurrentUser();
+  const canManage = canManageMotors(user);
   const { id } = await params;
   const motor = await prisma.motor.findUnique({
     where: { id: Number(id) },
@@ -42,12 +43,21 @@ export default async function MotorDetailPage({
           <Link className="button secondary" href={`/motors/${motor.id}/label`}>
             打印标签
           </Link>
-          <Link className="button secondary" href="/motors/inbound">
-            入库
-          </Link>
-          <Link className="button secondary" href="/motors/outbound">
-            出库
-          </Link>
+          {canManage ? (
+            <Link className="button secondary" href={`/motors/${motor.id}/edit`}>
+              编辑
+            </Link>
+          ) : null}
+          {canManage ? (
+            <Link className="button secondary" href="/motors/inbound">
+              入库
+            </Link>
+          ) : null}
+          {canManage ? (
+            <Link className="button secondary" href="/motors/outbound">
+              出库
+            </Link>
+          ) : null}
         </div>
       </div>
 

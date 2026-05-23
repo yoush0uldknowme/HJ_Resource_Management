@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 export default async function MobileHomePage() {
-  await requireCurrentUser();
+  await requireAdmin();
 
   return (
     <main className="mobile-shell">

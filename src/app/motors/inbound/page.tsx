@@ -1,7 +1,7 @@
 import { ResultPanel } from "@/components/result-panel";
 import { decodeActionResult } from "@/lib/action-result";
 import { inboundMotorAction } from "@/lib/actions/motors";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 function toURLSearchParams(params: Record<string, string | undefined>) {
   return new URLSearchParams(
@@ -14,7 +14,7 @@ export default async function InboundPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireCurrentUser();
+  await requireAdmin();
   const params = await searchParams;
   const result = decodeActionResult(toURLSearchParams(params));
 

@@ -1,8 +1,8 @@
 import { createMotorAction } from "@/lib/actions/motors";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 export default async function NewMotorPage() {
-  await requireCurrentUser();
+  await requireAdmin();
 
   return (
     <>

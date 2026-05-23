@@ -163,6 +163,25 @@ textarea {
   color: var(--primary-dark);
 }
 
+.button.danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.button.compact {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .table-wrap {
   overflow-x: auto;
   background: var(--panel);

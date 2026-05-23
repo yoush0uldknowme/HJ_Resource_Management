@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { requireCurrentUser } from "@/lib/auth";
+import { canManageMotors, requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { motorStatusLabel } from "@/lib/status";
 
 export default async function DashboardPage() {
-  await requireCurrentUser();
+  const user = await requireCurrentUser();
+  const canManage = canManageMotors(user);
   const [total, inStock, checkedOut, recent] = await Promise.all([
     prisma.motor.count(),
     prisma.motor.count({ where: { status: "in_stock" } }),
@@ -19,9 +20,11 @@ export default async function DashboardPage() {
           <h1>首页概览</h1>
           <p>展示电机建档、标签、入库、出库和留痕闭环的当前状态。</p>
         </div>
-        <Link className="button" href="/motors/new">
-          新建电机
-        </Link>
+        {canManage ? (
+          <Link className="button" href="/motors/new">
+            新建电机
+          </Link>
+        ) : null}
       </div>
 
       <section className="grid stats">

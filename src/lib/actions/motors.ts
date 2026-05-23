@@ -6,13 +6,20 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { encodeActionResult, type ActionResult } from "@/lib/action-result";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin, requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { applyInbound, applyOutbound, MotorFlowError } from "@/lib/motor-flow";
 import { buildMotorCode, motorCodeRange } from "@/lib/motor-code";
 import { findMotorByScannedCode, normalizeScannedCode } from "@/lib/motor-lookup";
 
 const createMotorSchema = z.object({
+  name: z.string().min(1),
+  model: z.string().min(1),
+  remark: z.string().optional()
+});
+
+const updateMotorSchema = z.object({
+  id: z.coerce.number().int().positive(),
   name: z.string().min(1),
   model: z.string().min(1),
   remark: z.string().optional()
@@ -46,7 +53,7 @@ async function savePhoto(file: File, motorId: number, photoType: string, uploade
 }
 
 export async function createMotorAction(formData: FormData) {
-  const user = await requireCurrentUser();
+  const user = await requireAdmin();
   const parsed = createMotorSchema.parse({
     name: formData.get("name"),
     model: formData.get("model"),
@@ -81,8 +88,42 @@ export async function createMotorAction(formData: FormData) {
   redirect(`/motors/${motor.id}`);
 }
 
+export async function updateMotorAction(formData: FormData) {
+  await requireAdmin();
+  const parsed = updateMotorSchema.parse({
+    id: formData.get("id"),
+    name: formData.get("name"),
+    model: formData.get("model"),
+    remark: formData.get("remark") || undefined
+  });
+
+  await prisma.motor.update({
+    where: { id: parsed.id },
+    data: {
+      name: parsed.name,
+      model: parsed.model,
+      remark: parsed.remark
+    }
+  });
+
+  revalidatePath("/motors");
+  revalidatePath(`/motors/${parsed.id}`);
+  redirect(`/motors/${parsed.id}`);
+}
+
+export async function deleteMotorAction(formData: FormData) {
+  await requireAdmin();
+  const id = z.coerce.number().int().positive().parse(formData.get("id"));
+
+  await prisma.motor.delete({ where: { id } });
+
+  revalidatePath("/motors");
+  revalidatePath("/logs");
+  redirect("/motors");
+}
+
 async function performInbound(formData: FormData, returnPath: string) {
-  const user = await requireCurrentUser();
+  const user = await requireAdmin();
   const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const remark = String(formData.get("remark") ?? "").trim();
 
@@ -136,7 +177,7 @@ async function performInbound(formData: FormData, returnPath: string) {
 }
 
 async function performOutbound(formData: FormData, returnPath: string) {
-  const user = await requireCurrentUser();
+  const user = await requireAdmin();
   const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const issuedBy = String(formData.get("issuedBy") ?? "").trim();
   const vehicle = String(formData.get("vehicle") ?? "").trim();

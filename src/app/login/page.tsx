@@ -1,10 +1,15 @@
+import { redirect } from "next/navigation";
 import { loginAction } from "@/lib/actions/auth";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function LoginPage({
   searchParams
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  const user = await getCurrentUser();
+  if (user) redirect("/");
+
   const params = await searchParams;
 
   return (
