@@ -35,10 +35,18 @@ if (!File.Exists(nextCommand))
 
 if (IsPortOpen("127.0.0.1", port))
 {
-    Console.WriteLine($"端口 {port} 已经有服务在运行，直接打开浏览器。");
-    OpenBrowser(url);
-    WaitBeforeExit();
-    return;
+    Console.WriteLine($"端口 {port} 已经有服务在运行，正在检查页面是否可访问。");
+    if (IsPageReady(url, TimeSpan.FromSeconds(8)).GetAwaiter().GetResult())
+    {
+        Console.WriteLine("页面可访问，直接打开浏览器。");
+        OpenBrowser(url);
+        WaitBeforeExit();
+        return;
+    }
+
+    Console.WriteLine($"端口 {port} 被占用，但页面没有响应，正在清理占用进程。");
+    StopPortOwners(port);
+    Thread.Sleep(1000);
 }
 
 Console.WriteLine("正在启动服务...");
@@ -61,12 +69,12 @@ try
     using var process = Process.Start(startInfo);
     if (process == null)
     {
-        Fail("启动 npm run dev 失败。");
+        Fail("启动 Next.js 服务失败。");
         return;
     }
 
     Console.WriteLine("等待服务就绪...");
-    if (WaitForPort("127.0.0.1", port, TimeSpan.FromSeconds(45), process))
+    if (WaitForPage(url, TimeSpan.FromSeconds(90), process))
     {
         Console.WriteLine("服务已启动，正在打开浏览器。");
         OpenBrowser(url);
@@ -77,7 +85,7 @@ try
     }
     else
     {
-        Console.WriteLine("服务还在启动，但 45 秒内没有检测到端口。");
+        Console.WriteLine("服务还在启动，但 90 秒内页面没有响应。");
         Console.WriteLine($"请稍后手动访问 {url}");
     }
 
@@ -104,7 +112,7 @@ static string FindProjectRoot()
     return @"D:\github\HJ_Resource_Management";
 }
 
-static bool WaitForPort(string host, int port, TimeSpan timeout, Process process)
+static bool WaitForPage(string url, TimeSpan timeout, Process process)
 {
     var deadline = DateTime.UtcNow + timeout;
     while (DateTime.UtcNow < deadline)
@@ -114,7 +122,7 @@ static bool WaitForPort(string host, int port, TimeSpan timeout, Process process
             return false;
         }
 
-        if (IsPortOpen(host, port))
+        if (IsPageReady(url, TimeSpan.FromSeconds(3)).GetAwaiter().GetResult())
         {
             return true;
         }
@@ -123,6 +131,23 @@ static bool WaitForPort(string host, int port, TimeSpan timeout, Process process
     }
 
     return false;
+}
+
+static async Task<bool> IsPageReady(string url, TimeSpan timeout)
+{
+    try
+    {
+        using var client = new HttpClient
+        {
+            Timeout = timeout
+        };
+        using var response = await client.GetAsync(url);
+        return (int)response.StatusCode < 500;
+    }
+    catch
+    {
+        return false;
+    }
 }
 
 static bool IsPortOpen(string host, int port)
@@ -165,6 +190,80 @@ static void OpenBrowser(string url)
     {
         Console.WriteLine($"浏览器打开失败，请手动访问 {url}");
         Console.WriteLine(ex.Message);
+    }
+}
+
+static void StopPortOwners(int port)
+{
+    foreach (var pid in GetPortOwnerPids(port))
+    {
+        try
+        {
+            Console.WriteLine($"正在关闭占用端口 {port} 的进程 PID {pid}。");
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "taskkill.exe",
+                Arguments = $"/PID {pid} /T /F",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            process?.WaitForExit(5000);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"关闭 PID {pid} 失败: {ex.Message}");
+        }
+    }
+}
+
+static IReadOnlyList<int> GetPortOwnerPids(int port)
+{
+    try
+    {
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = "netstat.exe",
+            Arguments = "-ano -p tcp",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true
+        });
+        if (process == null)
+        {
+            return Array.Empty<int>();
+        }
+
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit(5000);
+        var pids = new HashSet<int>();
+
+        foreach (var line in output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var columns = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (columns.Length < 5)
+            {
+                continue;
+            }
+
+            var localAddress = columns[1];
+            var state = columns[3];
+            if (!state.Equals("LISTENING", StringComparison.OrdinalIgnoreCase) ||
+                !localAddress.EndsWith($":{port}", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (int.TryParse(columns[4], out var pid))
+            {
+                pids.Add(pid);
+            }
+        }
+
+        return pids.ToArray();
+    }
+    catch
+    {
+        return Array.Empty<int>();
     }
 }
 
