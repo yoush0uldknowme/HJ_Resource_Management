@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 const string appName = "HJ 资源管理系统";
@@ -12,10 +14,24 @@ var projectRoot = FindProjectRoot();
 var packageJson = Path.Combine(projectRoot, "package.json");
 var nodeModules = Path.Combine(projectRoot, "node_modules");
 var nextCommand = Path.Combine(projectRoot, "node_modules", ".bin", "next.cmd");
+var lanUrls = GetLanUrls(port);
 
 WriteHeader();
 Console.WriteLine($"项目目录: {projectRoot}");
-Console.WriteLine($"访问地址: {url}");
+Console.WriteLine($"电脑访问: {url}");
+if (lanUrls.Count > 0)
+{
+    Console.WriteLine("手机访问:");
+    foreach (var lanUrl in lanUrls)
+    {
+        Console.WriteLine($"  {lanUrl}/login");
+        Console.WriteLine($"  {lanUrl}/mobile");
+    }
+}
+else
+{
+    Console.WriteLine("手机访问: 未检测到可用局域网 IP，请确认电脑已连接 Wi-Fi 或网线。");
+}
 Console.WriteLine();
 
 if (!File.Exists(packageJson))
@@ -277,6 +293,42 @@ static string? FindChromePath()
     };
 
     return candidates.FirstOrDefault(File.Exists);
+}
+
+static IReadOnlyList<string> GetLanUrls(int port)
+{
+    var urls = new List<string>();
+    var ignoredNames = new[] { "VMware", "VirtualBox", "Hyper-V", "Loopback", "Teredo" };
+
+    foreach (var adapter in NetworkInterface.GetAllNetworkInterfaces())
+    {
+        if (adapter.OperationalStatus != OperationalStatus.Up ||
+            adapter.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel ||
+            ignoredNames.Any(name => adapter.Name.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+                                     adapter.Description.Contains(name, StringComparison.OrdinalIgnoreCase)))
+        {
+            continue;
+        }
+
+        foreach (var address in adapter.GetIPProperties().UnicastAddresses)
+        {
+            if (address.Address.AddressFamily != AddressFamily.InterNetwork ||
+                IPAddress.IsLoopback(address.Address))
+            {
+                continue;
+            }
+
+            var ip = address.Address.ToString();
+            if (ip.StartsWith("169.254.", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            urls.Add($"http://{ip}:{port}");
+        }
+    }
+
+    return urls.Distinct().ToArray();
 }
 
 static void WriteHeader()
