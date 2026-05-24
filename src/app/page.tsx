@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { canManageMotors, requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { motorStatusLabel } from "@/lib/status";
@@ -6,6 +7,8 @@ import { motorStatusLabel } from "@/lib/status";
 export default async function DashboardPage() {
   const user = await requireCurrentUser();
   const canManage = canManageMotors(user);
+  if (!canManage) redirect("/motors");
+
   const [total, inStock, checkedOut, recent] = await Promise.all([
     prisma.motor.count(),
     prisma.motor.count({ where: { status: "in_stock" } }),

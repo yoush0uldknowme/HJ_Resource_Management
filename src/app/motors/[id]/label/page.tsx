@@ -3,7 +3,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/print-button";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { renderCode128Svg } from "@/lib/code128";
 import { prisma } from "@/lib/db";
 
@@ -12,7 +12,7 @@ export default async function MotorLabelPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireCurrentUser();
+  await requireAdmin();
   const { id } = await params;
   const motor = await prisma.motor.findUnique({ where: { id: Number(id) } });
   if (!motor) notFound();

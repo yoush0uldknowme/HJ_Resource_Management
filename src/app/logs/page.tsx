@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { transactionLabel } from "@/lib/status";
 
 export default async function LogsPage() {
-  await requireCurrentUser();
+  await requireAdmin();
   const logs = await prisma.motorTransaction.findMany({
     include: { motor: true },
     orderBy: { createdAt: "desc" },

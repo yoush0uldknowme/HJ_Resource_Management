@@ -36,9 +36,19 @@ export function canManageMotors(user: Pick<CurrentUser, "role"> | null): boolean
   return user?.role === "admin";
 }
 
+export function canOperateMotors(user: Pick<CurrentUser, "role"> | null): boolean {
+  return user?.role === "admin" || user?.role === "viewer";
+}
+
 export async function requireAdmin() {
   const user = await requireCurrentUser();
   if (!canManageMotors(user)) redirect("/");
+  return user;
+}
+
+export async function requireMotorOperator() {
+  const user = await requireCurrentUser();
+  if (!canOperateMotors(user)) redirect("/");
   return user;
 }
 

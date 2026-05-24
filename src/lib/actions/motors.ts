@@ -6,7 +6,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { encodeActionResult, type ActionResult } from "@/lib/action-result";
-import { requireAdmin, requireCurrentUser } from "@/lib/auth";
+import { requireAdmin, requireCurrentUser, requireMotorOperator } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { applyInbound, applyOutbound, MotorFlowError } from "@/lib/motor-flow";
 import { buildMotorCode, motorCodeRange } from "@/lib/motor-code";
@@ -123,7 +123,7 @@ export async function deleteMotorAction(formData: FormData) {
 }
 
 async function performInbound(formData: FormData, returnPath: string) {
-  const user = await requireAdmin();
+  const user = await requireMotorOperator();
   const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const remark = String(formData.get("remark") ?? "").trim();
 
@@ -177,7 +177,7 @@ async function performInbound(formData: FormData, returnPath: string) {
 }
 
 async function performOutbound(formData: FormData, returnPath: string) {
-  const user = await requireAdmin();
+  const user = await requireMotorOperator();
   const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const issuedBy = String(formData.get("issuedBy") ?? "").trim();
   const vehicle = String(formData.get("vehicle") ?? "").trim();

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth";
+import { requireMotorOperator } from "@/lib/auth";
 
 export default async function MobileHomePage() {
-  await requireAdmin();
+  await requireMotorOperator();
 
   return (
     <main className="mobile-shell">

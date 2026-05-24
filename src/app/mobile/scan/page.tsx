@@ -3,7 +3,7 @@ import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
 import { decodeActionResult } from "@/lib/action-result";
 import { mobileLookupMotorAction } from "@/lib/actions/motors";
-import { requireCurrentUser } from "@/lib/auth";
+import { requireMotorOperator } from "@/lib/auth";
 
 function toURLSearchParams(params: Record<string, string | undefined>) {
   return new URLSearchParams(
@@ -16,7 +16,7 @@ export default async function MobileScanPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireCurrentUser();
+  await requireMotorOperator();
   const result = decodeActionResult(toURLSearchParams(await searchParams));
 
   return (
