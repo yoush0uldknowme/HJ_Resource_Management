@@ -6,6 +6,8 @@ using System.Net.Sockets;
 const string appName = "HJ 资源管理系统";
 const int port = 4011;
 var url = $"http://localhost:{port}/login";
+var adminUrl = $"http://localhost:{port}/login?mode=admin&next=/";
+var operatorUrl = $"http://localhost:{port}/login?mode=operator&next=/motors";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.Title = appName;
@@ -18,14 +20,15 @@ var lanUrls = GetLanUrls(port);
 
 WriteHeader();
 Console.WriteLine($"项目目录: {projectRoot}");
-Console.WriteLine($"电脑访问: {url}");
+Console.WriteLine("电脑访问:");
+Console.WriteLine($"  管理端: {adminUrl}");
+Console.WriteLine($"  用户端: {operatorUrl}");
 if (lanUrls.Count > 0)
 {
     Console.WriteLine("手机访问:");
     foreach (var lanUrl in lanUrls)
     {
-        Console.WriteLine($"  {lanUrl}/login");
-        Console.WriteLine($"  {lanUrl}/mobile");
+        Console.WriteLine($"  现场端: {lanUrl}/login?mode=operator&next=/mobile");
     }
 }
 else

@@ -40,6 +40,19 @@ export function canOperateMotors(user: Pick<CurrentUser, "role"> | null): boolea
   return user?.role === "admin" || user?.role === "viewer";
 }
 
+export function defaultLandingPath(user: Pick<CurrentUser, "role"> | null): string {
+  return canManageMotors(user) ? "/" : "/motors";
+}
+
+export function sanitizeRedirectPath(value: FormDataEntryValue | string | null | undefined): string | null {
+  if (typeof value !== "string") return null;
+  const path = value.trim();
+  if (!path || !path.startsWith("/") || path.startsWith("//") || path.startsWith("/login")) {
+    return null;
+  }
+  return path;
+}
+
 export async function requireAdmin() {
   const user = await requireCurrentUser();
   if (!canManageMotors(user)) redirect("/");

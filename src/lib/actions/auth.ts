@@ -1,12 +1,20 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { clearLoginCookie, hashPassword, setLoginCookie } from "@/lib/auth";
+import {
+  clearLoginCookie,
+  defaultLandingPath,
+  hashPassword,
+  sanitizeRedirectPath,
+  setLoginCookie
+} from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function loginAction(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const mode = String(formData.get("mode") ?? "").trim();
+  const redirectTo = sanitizeRedirectPath(formData.get("redirectTo"));
 
   const user = await prisma.user.findFirst({
     where: {
@@ -17,11 +25,14 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!user) {
-    redirect("/login?error=1");
+    const params = new URLSearchParams({ error: "1" });
+    if (mode) params.set("mode", mode);
+    if (redirectTo) params.set("next", redirectTo);
+    redirect(`/login?${params.toString()}`);
   }
 
   await setLoginCookie(user.username);
-  redirect("/");
+  redirect(redirectTo ?? defaultLandingPath(user));
 }
 
 export async function logoutAction() {
