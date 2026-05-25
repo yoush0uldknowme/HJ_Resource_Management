@@ -17,7 +17,9 @@ export default async function MobileInboundPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   await requireMotorOperator();
-  const result = decodeActionResult(toURLSearchParams(await searchParams));
+  const params = await searchParams;
+  const result = decodeActionResult(toURLSearchParams(params));
+  const code = params.code?.trim();
 
   return (
     <main className="mobile-shell">
@@ -31,7 +33,7 @@ export default async function MobileInboundPage({
       <ResultPanel result={result} />
 
       <form className="panel form" action={mobileInboundMotorAction}>
-        <ScanCodeField />
+        <ScanCodeField defaultValue={code} />
         <div className="field">
           <label htmlFor="remark">备注</label>
           <textarea id="remark" name="remark" />
