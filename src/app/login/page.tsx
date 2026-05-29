@@ -32,13 +32,15 @@ export default async function LoginPage({
             </div>
           </div>
           <div className="login-choice-grid">
-            <Link className="login-choice" href="/login?mode=admin&next=/">
-              <strong>管理端</strong>
-              <span>管理员登录，进入后台管理。</span>
-            </Link>
             <Link className="login-choice" href={`/login?mode=operator&next=${encodeURIComponent(operatorNext)}`}>
+              <span className="login-choice-kicker">手机 / 现场使用</span>
               <strong>现场端</strong>
-              <span>用户登录，进入电机列表或手机现场入口。</span>
+              <span>查看电机列表，执行入库和出库。</span>
+            </Link>
+            <Link className="login-choice secondary" href="/login?mode=admin&next=/">
+              <span className="login-choice-kicker">电脑 / 管理维护</span>
+              <strong>管理端</strong>
+              <span>管理员建档、编辑、删除和查看日志。</span>
             </Link>
           </div>
           {params.error ? <p className="error">用户名或密码不正确，请重新选择入口登录。</p> : null}

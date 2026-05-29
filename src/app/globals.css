@@ -355,6 +355,54 @@ th {
   width: min(420px, 100%);
 }
 
+.login-choice-card {
+  width: min(560px, 100%);
+}
+
+.login-choice-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.login-choice {
+  display: grid;
+  gap: 6px;
+  min-height: 128px;
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18);
+}
+
+.login-choice.secondary {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+  box-shadow: none;
+}
+
+.login-choice-kicker {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.login-choice.secondary .login-choice-kicker {
+  color: var(--muted);
+}
+
+.login-choice strong {
+  font-size: 28px;
+  line-height: 1.15;
+}
+
+.login-choice span:last-child {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
 .error {
   color: var(--danger);
 }
