@@ -5,9 +5,9 @@ using System.Net.Sockets;
 
 const string appName = "HJ 资源管理系统";
 const int port = 4011;
-var url = $"http://localhost:{port}/login";
-var adminUrl = $"http://localhost:{port}/login?mode=admin&next=/";
-var operatorUrl = $"http://localhost:{port}/login?mode=operator&next=/motors";
+var url = $"http://localhost:{port}/";
+var adminUrl = $"http://localhost:{port}/admin";
+var operatorUrl = $"http://localhost:{port}/user";
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 Console.Title = appName;

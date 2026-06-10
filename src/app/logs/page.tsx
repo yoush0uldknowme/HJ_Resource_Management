@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { clearLogsAction, deleteLogAction } from "@/lib/actions/logs";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { transactionLabel } from "@/lib/status";
@@ -12,25 +14,33 @@ export default async function LogsPage() {
   });
 
   return (
-    <>
+    <div className="logs-page">
       <div className="page-head">
         <div>
           <h1>操作记录</h1>
-          <p>保留建档、入库、出库的操作人、时间、对象和备注。</p>
+          <p>记录建档、入库和出库操作。日志删除仅对管理员开放。</p>
         </div>
+        {logs.length ? (
+          <form action={clearLogsAction}>
+            <ConfirmSubmitButton message="确定清空全部操作日志吗？此操作无法撤销。">
+              清空全部日志
+            </ConfirmSubmitButton>
+          </form>
+        ) : null}
       </div>
 
-      <div className="table-wrap">
+      <div className="table-wrap logs-table">
         <table>
           <thead>
             <tr>
               <th>时间</th>
               <th>动作</th>
-              <th>对象</th>
+              <th>电机</th>
               <th>操作人</th>
               <th>出库人</th>
               <th>车辆 / 状态</th>
               <th>备注</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -45,11 +55,21 @@ export default async function LogsPage() {
                 <td>{log.targetPerson ?? "-"}</td>
                 <td>{log.location ?? "-"}</td>
                 <td>{log.remark ?? "-"}</td>
+                <td>
+                  <form action={deleteLogAction}>
+                    <input name="id" type="hidden" value={log.id} />
+                    <ConfirmSubmitButton message={`确定删除 ${log.motor.motorCode} 的这条日志吗？`}>
+                      删除
+                    </ConfirmSubmitButton>
+                  </form>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </>
+
+      {logs.length === 0 ? <p className="muted empty-state">暂无操作日志。</p> : null}
+    </div>
   );
 }

@@ -4,8 +4,8 @@ import { canManageMotors, getCurrentUser } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "HJ 资源管理",
-  description: "电机资源管理完整 demo"
+  title: "HJ 资源管理系统",
+  description: "电机资源管理 demo"
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,13 +14,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="zh-CN">
-      <body>
-        {user ? (
-          <AppShell canManage={canManage}>{children}</AppShell>
-        ) : (
-          children
-        )}
-      </body>
+      <body>{user ? <AppShell canManage={canManage}>{children}</AppShell> : children}</body>
     </html>
   );
 }

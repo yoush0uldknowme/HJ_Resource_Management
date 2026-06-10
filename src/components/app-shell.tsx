@@ -17,27 +17,50 @@ export function AppShell({
     return children;
   }
 
+  const links = [
+    { href: "/", label: "首页" },
+    { href: canManage ? "/admin" : "/user", label: "工作台" },
+    { href: "/motors", label: "电机" },
+    { href: "/motors/inbound", label: "入库" },
+    { href: "/motors/outbound", label: "出库" },
+    ...(canManage ? [{ href: "/logs", label: "日志" }] : []),
+    { href: "/feedback", label: "意见反馈" }
+  ];
+
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <strong>HJ 资源管理</strong>
-          <span>{canManage ? "管理后台" : "现场操作端"}</span>
-        </div>
-        <nav className="nav">
-          {canManage ? <Link href="/">首页概览</Link> : null}
-          <Link href="/motors">电机列表</Link>
-          {canManage ? <Link href="/motors/new">新建电机</Link> : null}
-          <Link href="/motors/inbound">入库</Link>
-          <Link href="/motors/outbound">出库</Link>
-          {canManage ? <Link href="/logs">操作记录</Link> : null}
+      <header className="topbar">
+        <Link className="brand" href={canManage ? "/admin" : "/user"}>
+          <span className="brand-mark">HJ</span>
+          <span>
+            <strong>资源管理系统</strong>
+            <small>{canManage ? "管理端" : "现场端"}</small>
+          </span>
+        </Link>
+
+        <nav className="nav" aria-label="主导航">
+          {links.map((link) => (
+            <Link
+              className={pathname === link.href ? "active" : ""}
+              href={link.href}
+              key={link.href}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="topbar-actions">
+          <Link className="mobile-entry-pill" href="/mobile">
+            现场端
+          </Link>
           <form action={logoutAction}>
             <button className="logout-button" type="submit">
-              退出登录
+              退出
             </button>
           </form>
-        </nav>
-      </aside>
+        </div>
+      </header>
       <main className="content">{children}</main>
     </div>
   );

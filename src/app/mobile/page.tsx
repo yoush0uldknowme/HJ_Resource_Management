@@ -1,27 +1,48 @@
 import Link from "next/link";
-import { requireMotorOperator } from "@/lib/auth";
+import { canManageMotors, requireMotorOperator } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 export default async function MobileHomePage() {
-  await requireMotorOperator();
+  const user = await requireMotorOperator();
+  const canManage = canManageMotors(user);
+  const [inStock, checkedOut] = await Promise.all([
+    prisma.motor.count({ where: { status: "in_stock" } }),
+    prisma.motor.count({ where: { status: "checked_out" } })
+  ]);
 
   return (
-    <main className="mobile-shell">
-      <h1>现场扫码</h1>
-      <p className="muted">用于手机端查询、入库和出库。摄像头扫码不可用时，可以手动输入编码。</p>
-      <div className="mobile-actions">
-        <Link className="button" href="/mobile/motors">
-          电机列表
+    <main className="mobile-shell mobile-home">
+      <section className="mobile-home-hero">
+        <span>HJ FIELD CONSOLE</span>
+        <h1>现场端</h1>
+        <p>{canManage ? "管理员模式，已解锁全部现场与管理入口。" : "用户模式，快速完成查询、入库和出库操作。"}</p>
+        <div className="mobile-home-stats">
+          <div><strong>{inStock}</strong><small>在库</small></div>
+          <div><strong>{checkedOut}</strong><small>已出库</small></div>
+        </div>
+      </section>
+
+      <section className="mobile-quick-grid">
+        <Link className="mobile-quick-card primary" href="/mobile/motors">
+          <span>01</span><strong>电机列表</strong><small>查看型号和状态</small>
         </Link>
-        <Link className="button" href="/mobile/scan">
-          扫码查询
+        <Link className="mobile-quick-card" href="/mobile/scan">
+          <span>02</span><strong>编号查询</strong><small>输入八位编号</small>
         </Link>
-        <Link className="button" href="/mobile/inbound">
-          扫码入库
+        <Link className="mobile-quick-card" href="/mobile/inbound">
+          <span>03</span><strong>入库 / 归还</strong><small>更新为在库状态</small>
         </Link>
-        <Link className="button" href="/mobile/outbound">
-          扫码出库
+        <Link className="mobile-quick-card" href="/mobile/outbound">
+          <span>04</span><strong>电机出库</strong><small>登记领用和去向</small>
         </Link>
-      </div>
+      </section>
+
+      {canManage ? (
+        <section className="mobile-admin-strip">
+          <div><strong>管理员工具</strong><span>建档与完整后台管理</span></div>
+          <Link href="/admin">打开工作台</Link>
+        </section>
+      ) : null}
     </main>
   );
 }

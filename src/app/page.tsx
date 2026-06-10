@@ -1,85 +1,69 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { canManageMotors, requireCurrentUser } from "@/lib/auth";
+import { canManageMotors, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { motorStatusLabel } from "@/lib/status";
 
-export default async function DashboardPage() {
-  const user = await requireCurrentUser();
+export default async function HomePage() {
+  const user = await getCurrentUser();
   const canManage = canManageMotors(user);
-  if (!canManage) redirect("/motors");
+  const primaryHref = user ? (canManage ? "/admin" : "/user") : "/login";
 
-  const [total, inStock, checkedOut, recent] = await Promise.all([
+  const [total, inStock, checkedOut, pending] = await Promise.all([
     prisma.motor.count(),
     prisma.motor.count({ where: { status: "in_stock" } }),
     prisma.motor.count({ where: { status: "checked_out" } }),
-    prisma.motor.findMany({ orderBy: { updatedAt: "desc" }, take: 6 })
+    prisma.motor.count({ where: { status: "draft" } })
   ]);
 
+  const matrixLines = [
+    "60200001 GM6020 READY VECTOR 0xA1F9",
+    "35080012 GM3508 STOCK SIGNAL 0x4E22",
+    "20060008 M2006 FLOW CHECKSUM 0x7C90",
+    "HJ RESOURCE ORBIT MOTOR STATUS ONLINE",
+    "INBOUND OUTBOUND ARCHIVE FIELD SYNC",
+    "6020 3508 2006 4310 8006 0001 0002",
+    "WAREHOUSE NODE ACTIVE TRACE LOG",
+    "MOTOR RESOURCE CONTROL SYSTEM"
+  ];
+
   return (
-    <>
-      <div className="page-head">
-        <div>
-          <h1>首页概览</h1>
-          <p>展示电机建档、标签、入库、出库和留痕闭环的当前状态。</p>
-        </div>
-        {canManage ? (
-          <Link className="button" href="/motors/new">
-            新建电机
-          </Link>
-        ) : null}
+    <div className="cinematic-home">
+      <div className="cinematic-matrix" aria-hidden="true">
+        {Array.from({ length: 18 }).map((_, index) => (
+          <span key={index}>{matrixLines[index % matrixLines.length]}</span>
+        ))}
+      </div>
+      <div className="cinematic-glow cinematic-glow-a" aria-hidden="true" />
+      <div className="cinematic-glow cinematic-glow-b" aria-hidden="true" />
+      <div className="cinematic-orbit" aria-hidden="true">
+        <div className="cinematic-orbit-ring ring-a" />
+        <div className="cinematic-orbit-ring ring-b" />
+        <div className="cinematic-orbit-ring ring-c" />
       </div>
 
-      <section className="grid stats">
-        <div className="card">
-          <div className="muted">电机总数</div>
-          <div className="stat-value">{total}</div>
+      <section className="cinematic-stage">
+        <div className="cinematic-status">
+          <span>系统在线</span>
+          <span>资源同步完成</span>
         </div>
-        <div className="card">
-          <div className="muted">在库</div>
-          <div className="stat-value">{inStock}</div>
+        <div className="cinematic-title-block">
+          <span className="cinematic-kicker">HJ RESOURCE ORBIT</span>
+          <h1>电机资源管理系统</h1>
+          <p>面向仓库、实验室和现场领用的电机资源中枢。</p>
+          <strong>{total}</strong>
+          <small>TOTAL MOTORS</small>
         </div>
-        <div className="card">
-          <div className="muted">已领用</div>
-          <div className="stat-value">{checkedOut}</div>
+        <div className="cinematic-actions">
+          <Link href={primaryHref}>{user ? "进入工作台" : "登录系统"}</Link>
+          <Link href="/admin">管理端</Link>
+          <Link href="/user">用户端</Link>
+          <Link href="/mobile">手机现场端</Link>
         </div>
-        <div className="card">
-          <div className="muted">待入库</div>
-          <div className="stat-value">{total - inStock - checkedOut}</div>
-        </div>
-      </section>
-
-      <section className="panel" style={{ marginTop: 18 }}>
-        <h2>最近更新</h2>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>编码</th>
-                <th>名称</th>
-                <th>型号</th>
-                <th>状态</th>
-                <th>库位 / 去向</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map((motor) => (
-                <tr key={motor.id}>
-                  <td>
-                    <Link href={`/motors/${motor.id}`}>{motor.motorCode}</Link>
-                  </td>
-                  <td>{motor.name}</td>
-                  <td>{motor.model}</td>
-                  <td>
-                    <span className="badge">{motorStatusLabel(motor.status)}</span>
-                  </td>
-                  <td>{motor.currentLocation ?? "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="cinematic-metrics" aria-label="资源概览">
+          <div><span>IN STOCK</span><strong>{inStock}</strong></div>
+          <div><span>CHECKED OUT</span><strong>{checkedOut}</strong></div>
+          <div><span>PENDING</span><strong>{pending}</strong></div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

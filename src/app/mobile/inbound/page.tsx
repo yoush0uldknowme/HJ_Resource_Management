@@ -19,32 +19,27 @@ export default async function MobileInboundPage({
   await requireMotorOperator();
   const params = await searchParams;
   const result = decodeActionResult(toURLSearchParams(params));
-  const code = params.code?.trim();
 
   return (
     <main className="mobile-shell">
-      <div className="page-head">
-        <div>
-          <h1>扫码入库</h1>
-          <p>扫描或输入编码后，电机会标记为在库。</p>
-        </div>
+      <div className="mobile-page-title">
+        <span>INBOUND</span>
+        <h1>入库 / 归还</h1>
+        <p>输入电机编号，将电机状态更新为在库。</p>
       </div>
-
       <ResultPanel result={result} />
-
-      <form className="panel form" action={mobileInboundMotorAction}>
-        <ScanCodeField defaultValue={code} />
+      <form className="panel form mobile-operation-form" action={mobileInboundMotorAction}>
+        <ScanCodeField defaultValue={params.code?.trim()} />
         <div className="field">
-          <label htmlFor="remark">备注</label>
-          <textarea id="remark" name="remark" />
+          <label htmlFor="remark">备注（选填）</label>
+          <textarea id="remark" name="remark" placeholder="记录归还情况或其他说明" />
         </div>
-        <button className="button" type="submit">
+        <button className="button mobile-primary-action" type="submit">
           确认入库
         </button>
       </form>
-
       <Link className="button secondary" href="/mobile">
-        返回现场入口
+        返回现场端
       </Link>
     </main>
   );

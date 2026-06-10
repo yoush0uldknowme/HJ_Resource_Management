@@ -8,13 +8,11 @@ export function ResultPanel({ result }: { result: ActionResult | null }) {
     <section className={`result-panel ${result.type}`}>
       <h2>{result.title}</h2>
       <p>{result.message}</p>
-      <div className="toolbar">
-        {result.motorId ? (
-          <Link className="button secondary" href={`/motors/${result.motorId}`}>
-            查看详情
-          </Link>
-        ) : null}
-      </div>
+      {result.motorId ? (
+        <Link className="button secondary" href={`/motors/${result.motorId}`}>
+          查看详情
+        </Link>
+      ) : null}
     </section>
   );
 }

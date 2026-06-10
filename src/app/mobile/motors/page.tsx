@@ -42,17 +42,16 @@ export default async function MobileMotorsPage({
 
   return (
     <main className="mobile-shell">
-      <div className="page-head mobile-page-head">
-        <div>
-          <h1>电机列表</h1>
-          <p>按编码、型号、SN 或名称查找电机。</p>
-        </div>
+      <div className="mobile-page-title">
+        <span>MOTOR LIST</span>
+        <h1>电机列表</h1>
+        <p>按编号、型号、SN 或名称查找电机。</p>
       </div>
 
       <form className="panel mobile-filter-form">
         <div className="field">
           <label htmlFor="q">搜索</label>
-          <input id="q" name="q" placeholder="编码 / 型号 / SN / 名称" defaultValue={q} />
+          <input id="q" name="q" placeholder="编号 / 型号 / SN / 名称" defaultValue={q} />
         </div>
         <div className="field">
           <label htmlFor="status">状态</label>
@@ -63,7 +62,7 @@ export default async function MobileMotorsPage({
             <option value="checked_out">已领用</option>
           </select>
         </div>
-        <button className="button" type="submit">
+        <button className="button mobile-primary-action" type="submit">
           查询
         </button>
       </form>
@@ -87,31 +86,23 @@ export default async function MobileMotorsPage({
                 <div>
                   <strong>{motor.motorCode}</strong>
                   <span>{motor.name}</span>
-                  <span>
-                    {motor.model} / {motor.snCode ?? motor.motorCode}
-                  </span>
+                  <span>{motor.model} / {motor.snCode ?? motor.motorCode}</span>
                 </div>
               </div>
               <div className="mobile-motor-meta">
                 <span className={`badge ${motor.status === "draft" ? "warn" : ""}`}>
                   {motorStatusLabel(motor.status)}
                 </span>
-                <span>{motor.currentLocation ?? "-"}</span>
+                <span>{motor.currentLocation ?? "位置未填写"}</span>
               </div>
               <div className="mobile-card-actions">
                 <Link className="button secondary compact" href={`/mobile/motors/${motor.id}`}>
                   详情
                 </Link>
-                <Link
-                  className="button secondary compact"
-                  href={`/mobile/inbound?code=${encodeURIComponent(motor.motorCode)}`}
-                >
+                <Link className="button secondary compact" href={`/mobile/inbound?code=${motor.motorCode}`}>
                   入库
                 </Link>
-                <Link
-                  className="button secondary compact"
-                  href={`/mobile/outbound?code=${encodeURIComponent(motor.motorCode)}`}
-                >
+                <Link className="button secondary compact" href={`/mobile/outbound?code=${motor.motorCode}`}>
                   出库
                 </Link>
               </div>
@@ -125,7 +116,7 @@ export default async function MobileMotorsPage({
       </div>
 
       <Link className="button secondary" href="/mobile">
-        返回现场入口
+        返回现场端
       </Link>
     </main>
   );

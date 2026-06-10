@@ -1,6 +1,5 @@
-import Link from "next/link";
 import Image from "next/image";
-import { deleteMotorAction } from "@/lib/actions/motors";
+import Link from "next/link";
 import { canManageMotors, requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { motorStatusLabel } from "@/lib/status";
@@ -39,25 +38,54 @@ export default async function MotorsPage({
         take: 1
       }
     },
-    orderBy: { updatedAt: "desc" }
+    orderBy: [{ model: "asc" }, { motorCode: "asc" }]
   });
 
-  return (
-    <>
-      <div className="page-head">
-        <div>
-          <h1>电机列表</h1>
-          <p>按编码、型号、SN、名称和状态查找当前电机。</p>
-        </div>
-        {canManage ? (
-          <Link className="button" href="/motors/new">
-            新建电机
-          </Link>
-        ) : null}
-      </div>
+  const modelGroups = Array.from(
+    motors.reduce((groups, motor) => {
+      const list = groups.get(motor.model) ?? [];
+      list.push(motor);
+      groups.set(motor.model, list);
+      return groups;
+    }, new Map<string, typeof motors>())
+  ).map(([model, items]) => ({
+    model,
+    items,
+    inStock: items.filter((item) => item.status === "in_stock").length,
+    checkedOut: items.filter((item) => item.status === "checked_out").length,
+    draft: items.filter((item) => item.status === "draft").length
+  }));
 
-      <form className="toolbar">
-        <input name="q" placeholder="编码 / 型号 / SN / 名称" defaultValue={q} />
+  const total = motors.length;
+  const inStock = motors.filter((motor) => motor.status === "in_stock").length;
+  const checkedOut = motors.filter((motor) => motor.status === "checked_out").length;
+
+  return (
+    <div className="motors-redesign">
+      <section className="motors-hero">
+        <div>
+          <span className="eyebrow">MOTOR MODULE</span>
+          <h1>电机型号库</h1>
+          <p>按型号分组查看电机资源。先选型号，再进入具体编号和状态，减少在长表格里翻找。</p>
+        </div>
+        <div className="motors-hero-stats">
+          <span>
+            <strong>{total}</strong>
+            总数
+          </span>
+          <span>
+            <strong>{inStock}</strong>
+            在库
+          </span>
+          <span>
+            <strong>{checkedOut}</strong>
+            出库
+          </span>
+        </div>
+      </section>
+
+      <form className="toolbar motor-toolbar">
+        <input name="q" placeholder="搜索编号 / 型号 / SN / 名称" defaultValue={q} />
         <select name="status" defaultValue={status ?? ""}>
           <option value="">全部状态</option>
           <option value="draft">待入库</option>
@@ -67,72 +95,77 @@ export default async function MotorsPage({
         <button className="button secondary" type="submit">
           查询
         </button>
+        {canManage ? (
+          <Link className="button" href="/motors/new">
+            新建电机
+          </Link>
+        ) : null}
       </form>
 
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>内部编码</th>
-              <th>照片</th>
-              <th>名称</th>
-              <th>型号</th>
-              <th>SN</th>
-              <th>状态</th>
-              <th>库位 / 去向</th>
-              <th>最近更新</th>
-              {canManage ? <th>管理</th> : null}
-            </tr>
-          </thead>
-          <tbody>
-            {motors.map((motor) => (
-              <tr key={motor.id}>
-                <td>
-                  <Link href={`/motors/${motor.id}`}>{motor.motorCode}</Link>
-                </td>
-                <td>
+      <section className="model-grid">
+        {modelGroups.map((group) => (
+          <article className="model-card" key={group.model}>
+            <div className="model-card-visual">
+              <div className="model-orbit" aria-hidden="true" />
+              <div>
+                <span className="eyebrow">MODEL</span>
+                <h2>{group.model}</h2>
+              </div>
+              <strong>{group.items.length}</strong>
+            </div>
+            <div className="model-metrics">
+              <span>
+                <strong>{group.inStock}</strong>
+                在库
+              </span>
+              <span>
+                <strong>{group.checkedOut}</strong>
+                已领用
+              </span>
+              <span>
+                <strong>{group.draft}</strong>
+                待入库
+              </span>
+            </div>
+            <div className="model-motor-list">
+              {group.items.slice(0, 5).map((motor) => (
+                <Link className="model-motor-row" href={`/motors/${motor.id}`} key={motor.id}>
                   {motor.photos[0] ? (
                     <Image
                       src={motor.photos[0].photoPath}
                       alt={motor.motorCode}
-                      width={72}
-                      height={54}
-                      className="thumb"
+                      width={52}
+                      height={52}
+                      className="model-thumb"
                     />
                   ) : (
-                    <span className="muted">无照片</span>
+                    <div className="model-thumb placeholder">无图</div>
                   )}
-                </td>
-                <td>{motor.name}</td>
-                <td>{motor.model}</td>
-                <td>{motor.snCode ?? "-"}</td>
-                <td>
+                  <div>
+                    <strong>{motor.motorCode}</strong>
+                    <span>{motor.name}</span>
+                  </div>
                   <span className={`badge ${motor.status === "draft" ? "warn" : ""}`}>
                     {motorStatusLabel(motor.status)}
                   </span>
-                </td>
-                <td>{motor.currentLocation ?? "-"}</td>
-                <td>{motor.updatedAt.toLocaleString("zh-CN")}</td>
-                {canManage ? (
-                  <td>
-                    <div className="row-actions">
-                      <Link className="button secondary compact" href={`/motors/${motor.id}/edit`}>
-                        编辑
-                      </Link>
-                      <form action={deleteMotorAction}>
-                        <input type="hidden" name="id" value={motor.id} />
-                        <button className="button danger compact" type="submit">
-                          删除
-                        </button>
-                      </form>
-                    </div>
-                  </td>
-                ) : null}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
+                </Link>
+              ))}
+            </div>
+            <div className="row-actions">
+              <Link className="button secondary compact" href={`/motors?q=${encodeURIComponent(group.model)}`}>
+                查看该型号
+              </Link>
+              {canManage ? (
+                <Link className="button secondary compact" href="/motors/new">
+                  新建
+                </Link>
+              ) : null}
+            </div>
+          </article>
+        ))}
+      </section>
+
+      {motors.length === 0 ? <p className="muted empty-state">没有找到符合条件的电机。</p> : null}
+    </div>
   );
 }

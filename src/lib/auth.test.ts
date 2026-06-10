@@ -15,10 +15,10 @@ describe("auth role helpers", () => {
     expect(canOperateMotors(null)).toBe(false);
   });
 
-  it("routes admin users to the dashboard and operators to the motor list", () => {
-    expect(defaultLandingPath({ role: "admin" })).toBe("/");
-    expect(defaultLandingPath({ role: "viewer" })).toBe("/motors");
-    expect(defaultLandingPath(null)).toBe("/motors");
+  it("routes admin users to admin and operators to user workspace", () => {
+    expect(defaultLandingPath({ role: "admin" })).toBe("/admin");
+    expect(defaultLandingPath({ role: "viewer" })).toBe("/user");
+    expect(defaultLandingPath(null)).toBe("/user");
   });
 
   it("only accepts same-site redirect paths", () => {

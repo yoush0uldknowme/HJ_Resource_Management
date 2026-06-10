@@ -21,24 +21,20 @@ export default async function MobileScanPage({
 
   return (
     <main className="mobile-shell">
-      <div className="page-head">
-        <div>
-          <h1>扫码查询</h1>
-          <p>扫描或输入编码，确认电机身份和当前状态。</p>
-        </div>
+      <div className="mobile-page-title">
+        <span>LOOKUP</span>
+        <h1>编号查询</h1>
+        <p>输入八位编号，确认电机身份、库存状态和当前位置。</p>
       </div>
-
       <ResultPanel result={result} />
-
-      <form className="panel form" action={mobileLookupMotorAction}>
+      <form className="panel form mobile-operation-form" action={mobileLookupMotorAction}>
         <ScanCodeField />
-        <button className="button" type="submit">
+        <button className="button mobile-primary-action" type="submit">
           查询电机
         </button>
       </form>
-
       <Link className="button secondary" href="/mobile">
-        返回现场入口
+        返回现场端
       </Link>
     </main>
   );

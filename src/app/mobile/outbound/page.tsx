@@ -19,40 +19,35 @@ export default async function MobileOutboundPage({
   await requireMotorOperator();
   const params = await searchParams;
   const result = decodeActionResult(toURLSearchParams(params));
-  const code = params.code?.trim();
 
   return (
     <main className="mobile-shell">
-      <div className="page-head">
-        <div>
-          <h1>扫码出库</h1>
-          <p>扫描或输入编码，填写出库人和使用车辆。</p>
-        </div>
+      <div className="mobile-page-title">
+        <span>OUTBOUND</span>
+        <h1>电机出库</h1>
+        <p>输入电机编号和领用信息，登记电机当前去向。</p>
       </div>
-
       <ResultPanel result={result} />
-
-      <form className="panel form" action={mobileOutboundMotorAction}>
-        <ScanCodeField defaultValue={code} />
+      <form className="panel form mobile-operation-form" action={mobileOutboundMotorAction}>
+        <ScanCodeField defaultValue={params.code?.trim()} />
         <div className="field">
-          <label htmlFor="issuedBy">出库人</label>
-          <input id="issuedBy" name="issuedBy" required />
+          <label htmlFor="issuedBy">领用人</label>
+          <input id="issuedBy" name="issuedBy" required placeholder="请输入姓名" />
         </div>
         <div className="field">
-          <label htmlFor="vehicle">使用车辆</label>
-          <input id="vehicle" name="vehicle" required placeholder="例如 英雄车 / 步兵1号" />
+          <label htmlFor="vehicle">使用车辆 / 去向</label>
+          <input id="vehicle" name="vehicle" required placeholder="例如：英雄车、步兵 1 号" />
         </div>
         <div className="field">
-          <label htmlFor="remark">备注</label>
-          <textarea id="remark" name="remark" />
+          <label htmlFor="remark">备注（选填）</label>
+          <textarea id="remark" name="remark" placeholder="填写用途或其他说明" />
         </div>
-        <button className="button" type="submit">
+        <button className="button mobile-primary-action" type="submit">
           确认出库
         </button>
       </form>
-
       <Link className="button secondary" href="/mobile">
-        返回现场入口
+        返回现场端
       </Link>
     </main>
   );

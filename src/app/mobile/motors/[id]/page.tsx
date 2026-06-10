@@ -26,13 +26,10 @@ export default async function MobileMotorDetailPage({
 
   return (
     <main className="mobile-shell">
-      <div className="page-head mobile-page-head">
-        <div>
-          <h1>{motor.motorCode}</h1>
-          <p>
-            {motor.name} / {motor.model}
-          </p>
-        </div>
+      <div className="mobile-page-title">
+        <span>MOTOR DETAIL</span>
+        <h1>{motor.motorCode}</h1>
+        <p>{motor.name} / {motor.model}</p>
       </div>
 
       <section className="panel mobile-detail-panel">
@@ -40,10 +37,10 @@ export default async function MobileMotorDetailPage({
           <span className={`badge ${motor.status === "draft" ? "warn" : ""}`}>
             {motorStatusLabel(motor.status)}
           </span>
-          <span>{motor.currentLocation ?? "-"}</span>
+          <span>{motor.currentLocation ?? "位置未填写"}</span>
         </div>
         <div className="kv">
-          <strong>SN / 编码</strong>
+          <strong>SN / 编号</strong>
           <span>{motor.snCode ?? motor.motorCode}</span>
         </div>
         <div className="kv">
@@ -67,16 +64,10 @@ export default async function MobileMotorDetailPage({
       ) : null}
 
       <div className="mobile-actions">
-        <Link
-          className="button"
-          href={`/mobile/inbound?code=${encodeURIComponent(motor.motorCode)}`}
-        >
+        <Link className="button" href={`/mobile/inbound?code=${motor.motorCode}`}>
           入库
         </Link>
-        <Link
-          className="button"
-          href={`/mobile/outbound?code=${encodeURIComponent(motor.motorCode)}`}
-        >
+        <Link className="button" href={`/mobile/outbound?code=${motor.motorCode}`}>
           出库
         </Link>
         <Link className="button secondary" href="/mobile/motors">

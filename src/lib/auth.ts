@@ -41,7 +41,7 @@ export function canOperateMotors(user: Pick<CurrentUser, "role"> | null): boolea
 }
 
 export function defaultLandingPath(user: Pick<CurrentUser, "role"> | null): string {
-  return canManageMotors(user) ? "/" : "/motors";
+  return canManageMotors(user) ? "/admin" : "/user";
 }
 
 export function sanitizeRedirectPath(value: FormDataEntryValue | string | null | undefined): string | null {
@@ -55,13 +55,13 @@ export function sanitizeRedirectPath(value: FormDataEntryValue | string | null |
 
 export async function requireAdmin() {
   const user = await requireCurrentUser();
-  if (!canManageMotors(user)) redirect("/");
+  if (!canManageMotors(user)) redirect("/user");
   return user;
 }
 
 export async function requireMotorOperator() {
   const user = await requireCurrentUser();
-  if (!canOperateMotors(user)) redirect("/");
+  if (!canOperateMotors(user)) redirect("/login");
   return user;
 }
 

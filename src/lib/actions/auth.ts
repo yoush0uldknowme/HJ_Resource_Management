@@ -37,5 +37,5 @@ export async function loginAction(formData: FormData) {
 
 export async function logoutAction() {
   await clearLoginCookie();
-  redirect("/login");
+  redirect("/");
 }

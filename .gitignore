@@ -16,8 +16,13 @@ public/uploads/
 
 # logs and generated state
 *.log
+*.pdb
 dev-server*.log
 .superpowers/
+
+# .NET build cache
+**/bin/
+**/obj/
 
 # typescript
 *.tsbuildinfo
