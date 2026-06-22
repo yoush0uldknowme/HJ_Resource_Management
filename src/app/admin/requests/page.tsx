@@ -25,11 +25,11 @@ export default async function AdminRequestsPage({
       <div className="page-head">
         <div>
           <h1>出库申请审批</h1>
-          <p>批准时请选择与申请型号一致的在库电机。审批后需由领用人在手机端扫码执行出库。</p>
+          <p>审批后，申请人可在手机端扫码执行出库。指定电机为选填——不指定时，申请人可拿任意同型号电机。</p>
         </div>
       </div>
-      {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>电机已分配，请通知领用人前往手机端扫码出库。</p></div> : null}
-      {params.rejected ? <div className="result-panel success"><h2>申请已拒绝</h2><p>申请人可在“我的申请”中查看审批意见。</p></div> : null}
+      {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>已批准申请，请通知领用人前往手机端扫码出库。</p></div> : null}
+      {params.rejected ? <div className="result-panel success"><h2>申请已拒绝</h2><p>申请人可在"我的申请"中查看审批意见。</p></div> : null}
       {params.error ? <div className="result-panel error"><h2>无法批准</h2><p>所选电机可能已经出库、型号不匹配或不存在。</p></div> : null}
 
       <section className="request-list">
@@ -40,7 +40,7 @@ export default async function AdminRequestsPage({
               <div className="request-card-head">
                 <div>
                   <span>申请型号</span>
-                  <strong>{request.model}</strong>
+                  <strong>{request.model} × {request.quantity}</strong>
                   <small>{request.requester.username} · {request.createdAt.toLocaleString("zh-CN")}</small>
                 </div>
                 <span className={`badge request-${request.status}`}>
@@ -51,32 +51,24 @@ export default async function AdminRequestsPage({
                 <div><dt>领用人</dt><dd>{request.targetPerson}</dd></div>
                 <div><dt>车辆 / 去向</dt><dd>{request.destination}</dd></div>
                 <div><dt>备注</dt><dd>{request.remark ?? "-"}</dd></div>
-                <div><dt>已分配</dt><dd>{request.assignedMotor?.motorCode ?? "-"}</dd></div>
+                <div><dt>已指定电机</dt><dd>{request.assignedMotor?.motorCode ?? "未指定（可拿任意同型号）"}</dd></div>
                 <div><dt>审批人</dt><dd>{request.reviewedBy ?? "-"}</dd></div>
                 <div><dt>审批意见</dt><dd>{request.reviewRemark ?? "-"}</dd></div>
               </dl>
               {request.status === "pending" ? (
                 <div className="approval-actions">
-                  {/* 用户已预选电机时显示提示 */}
-                  {request.assignedMotorId && request.assignedMotor ? (
-                    <div style={{ marginBottom: "12px", padding: "10px 14px", background: "#e8f5f2", borderRadius: "8px", fontSize: "14px" }}>
-                      申请人已预选：<strong>{request.assignedMotor.motorCode}</strong>（{request.assignedMotor.name}）
-                      {request.assignedMotor.status !== "in_stock" ? (
-                        <span style={{ color: "var(--danger)", marginLeft: "8px" }}>⚠ 已不在库，请重新分配</span>
-                      ) : null}
-                    </div>
-                  ) : null}
                   <form action={approveOutboundRequestAction}>
                     <input type="hidden" name="requestId" value={request.id} />
-                    {/* 如果用户已预选且仍需手动覆盖，可分配其他电机 */}
                     <div className="field">
                       <label htmlFor={`motor-${request.id}`}>
-                        {request.assignedMotorId ? "更换分配（可选）" : "分配具体电机"}
+                        指定电机（选填，不指定则用户可拿任意 {request.model}）
                       </label>
-                      <select id={`motor-${request.id}`} name="motorId" required defaultValue={request.assignedMotorId && request.assignedMotor?.status === "in_stock" ? String(request.assignedMotorId) : ""}>
-                        <option value="" disabled>
-                          {candidates.length ? (request.assignedMotorId ? "使用用户预选（或选择一个替代）" : "选择在库电机") : "该型号暂无库存"}
-                        </option>
+                      <select
+                        id={`motor-${request.id}`}
+                        name="motorId"
+                        defaultValue={request.assignedMotorId && request.assignedMotor?.status === "in_stock" ? String(request.assignedMotorId) : "none"}
+                      >
+                        <option value="none">不指定（推荐）</option>
                         {candidates.map((motor) => {
                           const isPreSelected = motor.id === request.assignedMotorId;
                           return (
@@ -91,15 +83,7 @@ export default async function AdminRequestsPage({
                       <label htmlFor={`approve-remark-${request.id}`}>审批意见（选填）</label>
                       <input id={`approve-remark-${request.id}`} name="reviewRemark" />
                     </div>
-                    <button
-                      className="button"
-                      type="submit"
-                      disabled={!candidates.length && !request.assignedMotorId}
-                    >
-                      {request.assignedMotorId && request.assignedMotor?.status === "in_stock"
-                        ? "批准（使用预选电机）"
-                        : "批准并出库"}
-                    </button>
+                    <button className="button" type="submit">批准申请</button>
                   </form>
                   <form action={rejectOutboundRequestAction}>
                     <input type="hidden" name="requestId" value={request.id} />

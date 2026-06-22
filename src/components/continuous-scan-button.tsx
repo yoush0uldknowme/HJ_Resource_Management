@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ContinuousScanner } from "@/components/continuous-scanner";
 
 type Props = {
-  mode: "inbound" | "outbound" | "request";
+  mode: "inbound" | "outbound" | "request" | "executeApproved";
   /** 出库模式需要 */
   issuedBy?: string;
   vehicle?: string;
@@ -34,6 +34,7 @@ export function ContinuousScanButton({
   const requestReady =
     mode !== "request" || (!!targetPerson && !!destination);
 
+  // executeApproved 模式不需要额外信息
   const ready = outboundReady && requestReady;
 
   return (

@@ -43,6 +43,7 @@ model OutboundRequest {
   requesterId     Int
   requester       User      @relation(fields: [requesterId], references: [id], onDelete: Cascade)
   model           String
+  quantity        Int       @default(1)
   targetPerson    String
   destination     String
   remark          String?

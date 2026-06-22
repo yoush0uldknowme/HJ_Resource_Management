@@ -11,10 +11,10 @@ import {
 } from "@/lib/motor/flow";
 
 /**
- * 连续扫码出入库 / 申请 API
+ * 连续扫码出入库 / 申请 / 执行已审批出库 API
  * POST /api/scan-execute
  * body: {
- *   mode: "inbound" | "outbound" | "request",
+ *   mode: "inbound" | "outbound" | "request" | "executeApproved",
  *   code: string,
  *   issuedBy?: string,       // outbound 需要
  *   vehicle?: string,        // outbound 需要
@@ -145,25 +145,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 检查是否已有待审批的申请
-      const existingPending = await prisma.outboundRequest.findFirst({
-        where: {
-          assignedMotorId: motor.id,
-          status: "pending"
-        }
-      });
-      if (existingPending) {
-        return NextResponse.json({
-          ok: false,
-          motorCode: motor.motorCode,
-          message: `${motor.motorCode} 已有待审批的申请`
-        });
-      }
-
       await prisma.outboundRequest.create({
         data: {
           requesterId: user.id,
           model: motor.model,
+          quantity: 1,
           targetPerson,
           destination,
           remark: remark || null,
@@ -179,6 +165,80 @@ export async function POST(request: NextRequest) {
         ok: true,
         motorCode: motor.motorCode,
         message: `${motor.motorCode} 已提交申请 ✓`
+      });
+    }
+
+    if (mode === "executeApproved") {
+      // 扫码执行已审批的出库申请
+      // 1. 先查找指定了该电机的已审批申请
+      // 2. 再查找同型号未指定电机的已审批申请
+      if (motor.status !== "in_stock") {
+        return NextResponse.json({
+          ok: false,
+          motorCode: motor.motorCode,
+          message: `${motor.motorCode} 状态为 ${motor.status}，非在库`
+        });
+      }
+
+      let approvedRequest = await prisma.outboundRequest.findFirst({
+        where: {
+          assignedMotorId: motor.id,
+          status: "approved"
+        }
+      });
+
+      if (!approvedRequest) {
+        approvedRequest = await prisma.outboundRequest.findFirst({
+          where: {
+            model: motor.model,
+            assignedMotorId: null,
+            status: "approved"
+          },
+          orderBy: { createdAt: "asc" }
+        });
+      }
+
+      if (!approvedRequest) {
+        return NextResponse.json({
+          ok: false,
+          motorCode: motor.motorCode,
+          message: `${motor.motorCode} 没有已审批的出库申请`
+        });
+      }
+
+      const next = applyOutbound(
+        { status: motor.status, currentLocation: motor.currentLocation },
+        {
+          operator: user.username,
+          issuedBy: approvedRequest.targetPerson,
+          vehicle: approvedRequest.destination,
+          remark: approvedRequest.remark ?? undefined
+        }
+      );
+
+      await prisma.$transaction([
+        prisma.motor.update({
+          where: { id: motor.id },
+          data: {
+            status: next.motor.status,
+            currentLocation: next.motor.currentLocation,
+            transactions: { create: next.transaction }
+          }
+        }),
+        prisma.outboundRequest.updateMany({
+          where: { id: approvedRequest.id, status: "approved" },
+          data: { status: "completed" }
+        })
+      ]);
+
+      revalidatePath("/motors");
+      revalidatePath("/logs");
+      revalidatePath("/admin/requests");
+
+      return NextResponse.json({
+        ok: true,
+        motorCode: motor.motorCode,
+        message: `${motor.motorCode} 已出库给 ${approvedRequest.targetPerson} ✓`
       });
     }
 

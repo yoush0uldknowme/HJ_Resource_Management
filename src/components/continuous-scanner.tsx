@@ -11,7 +11,7 @@ type ScanResult = {
 };
 
 type Props = {
-  mode: "inbound" | "outbound" | "request";
+  mode: "inbound" | "outbound" | "request" | "executeApproved";
   issuedBy?: string;
   vehicle?: string;
   targetPerson?: string;
@@ -231,7 +231,9 @@ export function ContinuousScanner({
               ? "连续扫码入库"
               : mode === "outbound"
                 ? "连续扫码出库"
-                : "连续扫码申请出库"}
+                : mode === "executeApproved"
+                  ? "连续扫码执行出库"
+                  : "连续扫码申请出库"}
           </h3>
           <button className="qr-scanner-close" onClick={handleClose}>
             ✕

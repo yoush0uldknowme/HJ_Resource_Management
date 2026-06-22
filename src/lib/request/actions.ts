@@ -14,6 +14,7 @@ import { resultUrl } from "@/lib/result";
 
 const requestSchema = z.object({
   model: z.string().trim().min(1),
+  quantity: z.coerce.number().int().min(1).max(99).default(1),
   targetPerson: z.string().trim().min(1),
   destination: z.string().trim().min(1),
   remark: z.string().trim().optional(),
@@ -27,6 +28,7 @@ export async function createOutboundRequestAction(formData: FormData) {
   const rawMotorId = formData.get("motorId");
   const data = requestSchema.parse({
     model: formData.get("model"),
+    quantity: formData.get("quantity") ?? 1,
     targetPerson: formData.get("targetPerson"),
     destination: formData.get("destination"),
     remark: formData.get("remark") || undefined,
@@ -44,11 +46,11 @@ export async function createOutboundRequestAction(formData: FormData) {
     }
   }
 
-  // 指定了具体电机时添加 assignedMotorId
   await prisma.outboundRequest.create({
     data: {
       requesterId: user.id,
       model: data.model,
+      quantity: data.quantity,
       targetPerson: data.targetPerson,
       destination: data.destination,
       remark: data.remark,
@@ -62,11 +64,10 @@ export async function createOutboundRequestAction(formData: FormData) {
   redirect(`${returnPath}?submitted=1`);
 }
 
-// ── 批量创建出库申请 ──
+// ── 批量创建出库申请（按型号+数量） ──
 
 export async function batchCreateOutboundRequestAction(formData: FormData) {
   const user = await requireOperator();
-  const rawCodes = String(formData.get("scannedCodes") ?? "").trim();
   const targetPerson = String(formData.get("targetPerson") ?? "").trim();
   const destination = String(formData.get("destination") ?? "").trim();
   const remark = String(formData.get("remark") ?? "").trim() || undefined;
@@ -74,54 +75,87 @@ export async function batchCreateOutboundRequestAction(formData: FormData) {
     ? "/mobile/requests"
     : "/requests";
 
-  if (!rawCodes) {
-    redirect(`${returnPath}?error=empty`);
-  }
-
   if (!targetPerson || !destination) {
     redirect(`${returnPath}?error=missing_fields`);
   }
 
-  // 解析多个编号
-  const codes = rawCodes
-    .split(/[\n,\s]+/)
-    .map((c) => c.trim())
-    .filter(Boolean);
-
-  if (codes.length === 0) {
-    redirect(`${returnPath}?error=empty`);
-  }
+  // 解析多个型号+数量对，格式：model=GM6020&qty=2 或从重复字段读取
+  // 支持两种格式：
+  // 1. scannedCodes 文本框（每行一个编号）- 兼容旧方式
+  // 2. models[] + quantities[] 数组 - 新方式
+  const rawCodes = String(formData.get("scannedCodes") ?? "").trim();
+  const models = formData.getAll("models[]");
+  const quantities = formData.getAll("quantities[]");
 
   const succeeded: string[] = [];
   const failed: { code: string; reason: string }[] = [];
 
-  for (const code of codes) {
-    try {
-      const motor = await findMotorByCode(prisma, code);
-      if (!motor) {
-        failed.push({ code, reason: "未找到电机" });
-        continue;
-      }
-      if (motor.status !== "in_stock") {
-        failed.push({ code, reason: `状态为 ${motor.status}，非在库` });
+  if (models.length > 0) {
+    // 新方式：按型号+数量
+    for (let i = 0; i < models.length; i++) {
+      const model = String(models[i]).trim();
+      const qty = parseInt(String(quantities[i] ?? "1"), 10) || 1;
+      if (!model || qty < 1) continue;
+
+      // 检查库存是否足够
+      const stockCount = await prisma.motor.count({
+        where: { model, status: "in_stock" }
+      });
+      if (stockCount < qty) {
+        failed.push({ code: `${model} x${qty}`, reason: `库存仅 ${stockCount} 台，不足 ${qty} 台` });
         continue;
       }
 
       await prisma.outboundRequest.create({
         data: {
           requesterId: user.id,
-          model: motor.model,
+          model,
+          quantity: qty,
           targetPerson,
           destination,
-          remark,
-          assignedMotorId: motor.id
+          remark
         }
       });
-      succeeded.push(motor.motorCode);
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : "未知错误";
-      failed.push({ code, reason });
+      succeeded.push(`${model} x${qty}`);
     }
+  } else if (rawCodes) {
+    // 旧方式：按具体编号
+    const codes = rawCodes
+      .split(/[\n,\s]+/)
+      .map((c) => c.trim())
+      .filter(Boolean);
+
+    for (const code of codes) {
+      try {
+        const motor = await findMotorByCode(prisma, code);
+        if (!motor) {
+          failed.push({ code, reason: "未找到电机" });
+          continue;
+        }
+        if (motor.status !== "in_stock") {
+          failed.push({ code, reason: `状态为 ${motor.status}，非在库` });
+          continue;
+        }
+
+        await prisma.outboundRequest.create({
+          data: {
+            requesterId: user.id,
+            model: motor.model,
+            quantity: 1,
+            targetPerson,
+            destination,
+            remark,
+            assignedMotorId: motor.id
+          }
+        });
+        succeeded.push(motor.motorCode);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : "未知错误";
+        failed.push({ code, reason });
+      }
+    }
+  } else {
+    redirect(`${returnPath}?error=empty`);
   }
 
   revalidatePath("/admin");
@@ -136,9 +170,7 @@ export async function batchCreateOutboundRequestAction(formData: FormData) {
       `${returnPath}?submitted=1&success=${successCount}&codes=${encodeURIComponent(succeeded.join(","))}`
     );
   } else if (successCount === 0) {
-    redirect(
-      `${returnPath}?error=batch_failed&failed=${failedCount}`
-    );
+    redirect(`${returnPath}?error=batch_failed&failed=${failedCount}`);
   } else {
     redirect(
       `${returnPath}?submitted=1&success=${successCount}&failed=${failedCount}&failedCodes=${encodeURIComponent(failed.map((f) => f.code).join(","))}`
@@ -146,47 +178,46 @@ export async function batchCreateOutboundRequestAction(formData: FormData) {
   }
 }
 
-// ── 审批通过（事务保护） ──
+// ── 审批通过（事务保护）──
 
 export async function approveOutboundRequestAction(formData: FormData) {
   const admin = await requireAdmin();
   const requestId = z.coerce.number().int().positive().parse(formData.get("requestId"));
   const rawMotorId = formData.get("motorId");
-  const motorId = rawMotorId && String(rawMotorId).trim()
+  // motorId 为空字符串或 "none" 时不指定电机
+  const motorId = rawMotorId && String(rawMotorId).trim() && String(rawMotorId).trim() !== "none"
     ? z.coerce.number().int().positive().parse(rawMotorId)
     : null;
   const reviewRemark = String(formData.get("reviewRemark") ?? "").trim();
 
-  // 整个审批流程在事务中执行，防止竞态
   try {
     await prisma.$transaction(async (tx) => {
-      // 1. 检查申请状态
       const request = await tx.outboundRequest.findUnique({ where: { id: requestId } });
       if (!request || request.status !== "pending") {
         throw new Error("REQUEST_NOT_PENDING");
       }
 
-      let assignedMotorId: number;
+      let assignedMotorId: number | null = null;
 
       if (motorId) {
-        // 管理员选择了电机：验证
+        // 管理员指定了电机：验证
         const motor = await tx.motor.findUnique({ where: { id: motorId } });
         if (!motor || motor.model !== request.model || motor.status !== "in_stock") {
           throw new Error("MOTOR_NOT_AVAILABLE");
         }
         assignedMotorId = motor.id;
       } else if (request.assignedMotorId) {
-        // 用户已预分配电机：验证仍有效
+        // 用户预选了电机：验证仍有效
         const motor = await tx.motor.findUnique({ where: { id: request.assignedMotorId } });
         if (!motor || motor.model !== request.model || motor.status !== "in_stock") {
-          throw new Error("MOTOR_NOT_AVAILABLE");
+          // 用户预选的已失效，但不阻止审批，改为不指定
+          assignedMotorId = null;
+        } else {
+          assignedMotorId = request.assignedMotorId;
         }
-        assignedMotorId = request.assignedMotorId;
-      } else {
-        throw new Error("MOTOR_NOT_AVAILABLE");
       }
+      // 如果都没有指定电机，assignedMotorId 保持 null，表示用户可拿任意同型号电机
 
-      // 3. 更新申请为已审批
       await tx.outboundRequest.update({
         where: { id: request.id },
         data: {
@@ -238,7 +269,7 @@ export async function rejectOutboundRequestAction(formData: FormData) {
   redirect("/admin/requests?rejected=1");
 }
 
-// ── 执行已审批出库（现场扫码） ──
+// ── 执行已审批出库（现场扫码）──
 
 export async function executeApprovedOutboundAction(formData: FormData) {
   const user = await requireOperator();
@@ -266,13 +297,27 @@ export async function executeApprovedOutboundAction(formData: FormData) {
     );
   }
 
-  // 查找该电机对应的已审批出库申请
-  const approvedRequest = await prisma.outboundRequest.findFirst({
+  // 查找该电机的已审批出库申请
+  // 1. 先查找指定了该电机的申请
+  // 2. 再查找同型号未指定电机的申请
+  let approvedRequest = await prisma.outboundRequest.findFirst({
     where: {
       assignedMotorId: motor.id,
       status: "approved"
     }
   });
+
+  if (!approvedRequest) {
+    // 没有指定该电机的申请，查找同型号未指定电机的申请
+    approvedRequest = await prisma.outboundRequest.findFirst({
+      where: {
+        model: motor.model,
+        assignedMotorId: null,
+        status: "approved"
+      },
+      orderBy: { createdAt: "asc" } // 先申请先得
+    });
+  }
 
   if (!approvedRequest) {
     redirect(
@@ -309,7 +354,7 @@ export async function executeApprovedOutboundAction(formData: FormData) {
     throw error;
   }
 
-  // 事务：出库 + 标记申请为 completed（带乐观锁防止重复执行）
+  // 事务：出库 + 标记申请为 completed
   try {
     await prisma.$transaction([
       prisma.motor.update({
@@ -325,8 +370,7 @@ export async function executeApprovedOutboundAction(formData: FormData) {
         data: { status: "completed" }
       })
     ]);
-  } catch (error) {
-    // 如果乐观锁失败（申请已被其他人执行），给友好提示
+  } catch {
     redirect(
       resultUrl(returnPath, {
         type: "error",

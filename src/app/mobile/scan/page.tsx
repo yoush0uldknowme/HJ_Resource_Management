@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
 import { MobileScanButton } from "@/components/mobile-scan-button";
+import { ContinuousScanButton } from "@/components/continuous-scan-button";
 import { decodeFromSearchParams } from "@/lib/result";
 import { mobileLookupMotorAction } from "@/lib/motor/actions";
 import { executeApprovedOutboundAction } from "@/lib/request/actions";
@@ -9,7 +10,6 @@ import { isAdmin, requireOperator } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { findMotorByCodeWithPhoto } from "@/lib/motor/lookup";
 import { normalizeScannedCode } from "@/lib/utils";
-import { getScanActions } from "@/lib/motor/flow";
 
 export default async function MobileScanPage({
   searchParams
@@ -25,12 +25,24 @@ export default async function MobileScanPage({
   const scannedCode = normalizeScannedCode(params.code);
   const motor = scannedCode ? await findMotorByCodeWithPhoto(prisma, scannedCode) : null;
 
-  // 检查该电机是否有已审批的出库申请
-  const approvedRequest = motor
-    ? await prisma.outboundRequest.findFirst({
-        where: { assignedMotorId: motor.id, status: "approved" }
-      })
-    : null;
+  // 检查该电机是否有已审批的出库申请（指定了该电机的或同型号未指定的）
+  let approvedRequest = null;
+  if (motor) {
+    approvedRequest = await prisma.outboundRequest.findFirst({
+      where: { assignedMotorId: motor.id, status: "approved" }
+    });
+    if (!approvedRequest && motor.status === "in_stock") {
+      approvedRequest = await prisma.outboundRequest.findFirst({
+        where: { model: motor.model, assignedMotorId: null, status: "approved" },
+        orderBy: { createdAt: "asc" }
+      });
+    }
+  }
+
+  // 查询是否有任何待执行的已审批申请
+  const pendingApprovedCount = await prisma.outboundRequest.count({
+    where: { status: "approved" }
+  });
 
   return (
     <main className="mobile-shell">
@@ -149,6 +161,29 @@ export default async function MobileScanPage({
       </form>
 
       <MobileScanButton redirectTo="/mobile/scan" />
+
+      {/* 如果有已审批待执行的申请，显示连续扫码出库按钮 */}
+      {pendingApprovedCount > 0 ? (
+        <>
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "#fef3c7",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "var(--warning)",
+              textAlign: "center"
+            }}
+          >
+            有 {pendingApprovedCount} 条已审批申请待执行出库
+          </div>
+          <ContinuousScanButton
+            mode="executeApproved"
+            label="📷 连续扫码执行出库"
+          />
+        </>
+      ) : null}
 
       <Link className="button secondary" href="/mobile">
         返回手机端
