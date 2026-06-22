@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { canManageMotors, requireCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { motorStatusLabel } from "@/lib/status";
+import { isAdmin, requireCurrentUser } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
+import { motorStatusLabel } from "@/lib/motor/status";
 
 export default async function MotorsPage({
   searchParams
@@ -10,7 +10,7 @@ export default async function MotorsPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const user = await requireCurrentUser();
-  const canManage = canManageMotors(user);
+  const admin = isAdmin(user);
   const params = await searchParams;
   const q = params.q?.trim();
   const status = params.status?.trim();
@@ -95,7 +95,7 @@ export default async function MotorsPage({
         <button className="button secondary" type="submit">
           查询
         </button>
-        {canManage ? (
+        {admin ? (
           <Link className="button" href="/motors/new">
             新建电机
           </Link>
@@ -155,7 +155,7 @@ export default async function MotorsPage({
               <Link className="button secondary compact" href={`/motors?q=${encodeURIComponent(group.model)}`}>
                 查看该型号
               </Link>
-              {canManage ? (
+              {admin ? (
                 <Link className="button secondary compact" href="/motors/new">
                   新建
                 </Link>

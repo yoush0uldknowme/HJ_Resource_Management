@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { updateMotorAction } from "@/lib/actions/motors";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { updateMotorAction } from "@/lib/motor/actions";
+import { requireAdmin } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
 
 export default async function EditMotorPage({
   params

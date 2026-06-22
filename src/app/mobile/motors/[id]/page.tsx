@@ -1,16 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireMotorOperator } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { motorStatusLabel } from "@/lib/status";
+import { requireOperator } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
+import { motorStatusLabel } from "@/lib/motor/status";
 
 export default async function MobileMotorDetailPage({
   params
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireMotorOperator();
+  await requireOperator(true);
   const { id } = await params;
   const motor = await prisma.motor.findUnique({
     where: { id: Number(id) },

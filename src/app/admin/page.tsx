@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { motorStatusLabel } from "@/lib/status";
+import { requireAdmin } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
+import { motorStatusLabel } from "@/lib/motor/status";
 
 export default async function AdminPage() {
   await requireAdmin();

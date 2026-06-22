@@ -3,9 +3,9 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/print-button";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth/index";
 import { renderCode128Svg } from "@/lib/code128";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export default async function MotorLabelPage({
   params

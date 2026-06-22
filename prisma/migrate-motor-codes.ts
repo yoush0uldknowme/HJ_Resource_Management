@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { buildMotorCode, motorModelPrefix } from "../src/lib/motor-code";
+import { buildMotorCode, motorModelPrefix } from "../src/lib/motor/code";
 
 const prisma = new PrismaClient();
 
@@ -15,12 +15,14 @@ async function main() {
     return { motor, nextCode: buildMotorCode(motor.model, sequence) };
   });
 
+  // 第一步：全部改为临时值（释放 unique 约束）
   for (const { motor } of updates) {
     await prisma.motor.update({
       where: { id: motor.id },
       data: { motorCode: `TEMP-${motor.id}-${Date.now()}` }
     });
   }
+  // 第二步：改为目标值
   for (const { motor, nextCode } of updates) {
     await prisma.motor.update({
       where: { id: motor.id },

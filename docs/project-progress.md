@@ -19,7 +19,7 @@
 默认账号：
 
 - 管理员：`admin / admin123`
-- 查看账号：`viewer / viewer123`
+- 操作员账号：`operator / operator123`
 
 ## 总体目标
 

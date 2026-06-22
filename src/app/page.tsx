@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { canManageMotors, getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { isAdmin, getCurrentUser } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  const canManage = canManageMotors(user);
-  const primaryHref = user ? (canManage ? "/admin" : "/user") : "/login";
+  const admin = isAdmin(user);
+  const primaryHref = user ? (admin ? "/admin" : "/user") : "/login";
 
   const [total, inStock, checkedOut, pending] = await Promise.all([
     prisma.motor.count(),
@@ -56,7 +56,7 @@ export default async function HomePage() {
           <Link href={primaryHref}>{user ? "进入工作台" : "登录系统"}</Link>
           <Link href="/admin">管理端</Link>
           <Link href="/user">用户端</Link>
-          <Link href="/mobile">手机现场端</Link>
+          <Link href="/mobile">手机端</Link>
         </div>
         <div className="cinematic-metrics" aria-label="资源概览">
           <div><span>IN STOCK</span><strong>{inStock}</strong></div>

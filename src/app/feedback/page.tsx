@@ -1,4 +1,4 @@
-import { requireCurrentUser } from "@/lib/auth";
+import { requireCurrentUser } from "@/lib/auth/index";
 
 export default async function FeedbackPage() {
   await requireCurrentUser();

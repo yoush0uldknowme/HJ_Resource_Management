@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 0.0.0.0 --port 4011",
-    "dev:local": "next dev --hostname 127.0.0.1 --port 4011",
+    "dev": "node server.mjs",
     "build": "next build",
     "lint": "tsc --noEmit",
     "test": "vitest run",
@@ -24,12 +23,15 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.15.21",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
+    "bcryptjs": "^3.0.3",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.3.2",
+    "jose": "^6.2.3",
     "prisma": "^6.8.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",

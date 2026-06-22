@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
-import { canManageMotors, getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { isAdmin, getCurrentUser } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
-  const canManage = canManageMotors(user);
+  const admin = isAdmin(user);
   const pendingRequests = user
     ? await prisma.outboundRequest.count({
-        where: canManage ? { status: "pending" } : { requesterId: user.id, status: "pending" }
+        where: admin ? { status: "pending" } : { requesterId: user.id, status: "pending" }
       })
     : 0;
 
@@ -22,7 +22,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="zh-CN">
       <body>
         {user ? (
-          <AppShell canManage={canManage} pendingRequests={pendingRequests}>
+          <AppShell isAdmin={admin} pendingRequests={pendingRequests}>
             {children}
           </AppShell>
         ) : (

@@ -1,5 +1,5 @@
-import { createMotorAction } from "@/lib/actions/motors";
-import { requireAdmin } from "@/lib/auth";
+import { createMotorAction } from "@/lib/motor/actions";
+import { requireAdmin } from "@/lib/auth/index";
 
 export default async function NewMotorPage() {
   await requireAdmin();

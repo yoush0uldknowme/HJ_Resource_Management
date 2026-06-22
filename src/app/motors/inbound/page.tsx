@@ -1,23 +1,17 @@
 import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
-import { decodeActionResult } from "@/lib/action-result";
-import { inboundMotorAction } from "@/lib/actions/motors";
-import { requireMotorOperator } from "@/lib/auth";
-
-function toURLSearchParams(params: Record<string, string | undefined>) {
-  return new URLSearchParams(
-    Object.entries(params).flatMap(([key, value]) => (value ? [[key, value]] : []))
-  );
-}
+import { decodeFromSearchParams } from "@/lib/result";
+import { inboundMotorAction } from "@/lib/motor/actions";
+import { requireOperator } from "@/lib/auth/index";
 
 export default async function InboundPage({
   searchParams
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireMotorOperator();
+  await requireOperator();
   const params = await searchParams;
-  const result = decodeActionResult(toURLSearchParams(params));
+  const result = decodeFromSearchParams(params);
 
   return (
     <>

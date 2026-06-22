@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { requireMotorOperator } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { requireOperator } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
 
 const statusLabel: Record<string, string> = {
   pending: "待审批",
   approved: "已批准",
-  rejected: "已拒绝"
+  rejected: "已拒绝",
+  completed: "已完成"
 };
 
 export default async function MyRequestsPage({
@@ -13,7 +14,7 @@ export default async function MyRequestsPage({
 }: {
   searchParams: Promise<{ submitted?: string }>;
 }) {
-  const user = await requireMotorOperator();
+  const user = await requireOperator();
   const params = await searchParams;
   const requests = await prisma.outboundRequest.findMany({
     where: { requesterId: user.id },
@@ -46,6 +47,18 @@ export default async function MyRequestsPage({
               <div><dt>申请备注</dt><dd>{request.remark ?? "-"}</dd></div>
               <div><dt>审批意见</dt><dd>{request.reviewRemark ?? "-"}</dd></div>
             </dl>
+            {/* 已批准：显示扫码出库链接 */}
+            {request.status === "approved" && request.assignedMotor ? (
+              <div style={{ marginTop: "12px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <Link
+                  className="button"
+                  style={{ fontSize: "14px", padding: "8px 16px" }}
+                  href={`/mobile/scan?code=${encodeURIComponent(request.assignedMotor.motorCode)}`}
+                >
+                  前往手机端扫码出库 ({request.assignedMotor.motorCode})
+                </Link>
+              </div>
+            ) : null}
           </article>
         ))}
       </section>

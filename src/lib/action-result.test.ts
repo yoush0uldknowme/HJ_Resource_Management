@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeActionResult, encodeActionResult } from "./action-result";
+import { decodeActionResult, encodeActionResult } from "./result";
 
 describe("action result query helpers", () => {
   it("round trips success result fields", () => {

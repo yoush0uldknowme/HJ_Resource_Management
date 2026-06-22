@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ActionResult } from "@/lib/action-result";
+import type { ActionResult } from "@/lib/result";
 
 export function ResultPanel({ result }: { result: ActionResult | null }) {
   if (!result) return null;

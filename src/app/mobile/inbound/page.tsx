@@ -2,24 +2,18 @@ import Link from "next/link";
 import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
 import { MobileScanButton } from "@/components/mobile-scan-button";
-import { decodeActionResult } from "@/lib/action-result";
-import { mobileInboundMotorAction } from "@/lib/actions/motors";
-import { requireMotorOperator } from "@/lib/auth";
-
-function toURLSearchParams(params: Record<string, string | undefined>) {
-  return new URLSearchParams(
-    Object.entries(params).flatMap(([key, value]) => (value ? [[key, value]] : []))
-  );
-}
+import { decodeFromSearchParams } from "@/lib/result";
+import { mobileInboundMotorAction } from "@/lib/motor/actions";
+import { requireOperator } from "@/lib/auth/index";
 
 export default async function MobileInboundPage({
   searchParams
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireMotorOperator();
+  await requireOperator(true);
   const params = await searchParams;
-  const result = decodeActionResult(toURLSearchParams(params));
+  const result = decodeFromSearchParams(params);
 
   return (
     <main className="mobile-shell">
@@ -43,7 +37,7 @@ export default async function MobileInboundPage({
       <MobileScanButton redirectTo="/mobile/inbound" label="📷 扫码入库" />
 
       <Link className="button secondary" href="/mobile">
-        返回现场端
+        返回手机端
       </Link>
     </main>
   );

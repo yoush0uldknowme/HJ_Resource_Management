@@ -1,4 +1,4 @@
-import { motorStatusLabel } from "@/lib/status";
+import { motorStatusLabel } from "@/lib/motor/status";
 
 export function MotorSummary({
   motorCode,

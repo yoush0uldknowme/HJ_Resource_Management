@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { applyInbound, applyOutbound } from "./motor-flow";
+import { applyInbound, applyOutbound } from "./motor/flow";
 
 describe("motor flow transitions", () => {
-  it("moves a motor into stock and records an inbound transaction", () => {
+  it("moves a motor into stock from checked_out and records an inbound transaction", () => {
     const result = applyInbound(
-      { status: "draft", currentLocation: null },
+      { status: "checked_out", currentLocation: "英雄车" },
       { operator: "admin" }
     );
 
@@ -15,6 +15,15 @@ describe("motor flow transitions", () => {
       location: "在库",
       remark: "编号确认入库"
     });
+  });
+
+  it("rejects inbound when motor is not in allowed status", () => {
+    expect(() =>
+      applyInbound(
+        { status: "retired", currentLocation: null },
+        { operator: "admin" }
+      )
+    ).toThrow("不允许入库");
   });
 
   it("moves a motor out of stock and records an outbound transaction", () => {

@@ -1,15 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { requireMotorOperator } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { motorStatusLabel } from "@/lib/status";
+import { requireOperator } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
+import { motorStatusLabel } from "@/lib/motor/status";
 
 export default async function MobileMotorsPage({
   searchParams
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  await requireMotorOperator();
+  await requireOperator(true);
   const params = await searchParams;
   const q = params.q?.trim();
   const status = params.status?.trim();
@@ -116,7 +116,7 @@ export default async function MobileMotorsPage({
       </div>
 
       <Link className="button secondary" href="/mobile">
-        返回现场端
+        返回手机端
       </Link>
     </main>
   );

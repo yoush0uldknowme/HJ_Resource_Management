@@ -14,15 +14,19 @@ prisma/dev.db
 prisma/dev.db-*
 public/uploads/
 
+# dev HTTPS certificates
+certificates/
+
 # logs and generated state
 *.log
 *.pdb
 dev-server*.log
 .superpowers/
 
-# .NET build cache
+# .NET build cache and published launcher exe
 **/bin/
 **/obj/
+tools/*/启动资源管理系统.exe
 
 # typescript
 *.tsbuildinfo

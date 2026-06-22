@@ -13,10 +13,29 @@ export function QrScanner({ onScan, onClose }: Props) {
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const scannedRef = useRef(false);
+  /** 标记 scanner.start() 是否成功，防止对未启动的扫描器调用 stop() */
+  const startedRef = useRef(false);
+  /** 标记是否已主动停止，避免清理函数二次 stop */
+  const stoppedRef = useRef(false);
+
+  const doStop = useCallback(async () => {
+    // 只有扫描器真正启动过才调用 stop()，否则 html5-qrcode 会抛出
+    // "Cannot stop, scanner is not running or paused"
+    if (scannerRef.current && startedRef.current) {
+      try {
+        await scannerRef.current.stop();
+      } catch {
+        // 已停止，忽略
+      }
+      startedRef.current = false;
+    }
+    scannerRef.current = null;
+  }, []);
 
   const start = useCallback(async () => {
     setError(null);
     scannedRef.current = false;
+    stoppedRef.current = false;
 
     const scanner = new Html5Qrcode("qr-reader");
     scannerRef.current = scanner;
@@ -26,10 +45,9 @@ export function QrScanner({ onScan, onClose }: Props) {
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1 },
         (decodedText) => {
-          // 避免重复触发
           if (scannedRef.current) return;
           scannedRef.current = true;
-          scanner.stop().catch(() => {});
+          // 不在此处 stop，由组件卸载清理统一处理
           setScanning(false);
           onScan(decodedText.trim());
         },
@@ -37,6 +55,7 @@ export function QrScanner({ onScan, onClose }: Props) {
           // 未识别到二维码，静默忽略
         }
       );
+      startedRef.current = true;
       setScanning(true);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "无法打开摄像头";
@@ -45,26 +64,21 @@ export function QrScanner({ onScan, onClose }: Props) {
   }, [onScan]);
 
   const stop = useCallback(async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop();
-      } catch {
-        // 已停止，忽略
-      }
-      scannerRef.current = null;
-    }
+    stoppedRef.current = true;
+    await doStop();
     setScanning(false);
     onClose();
-  }, [onClose]);
+  }, [onClose, doStop]);
 
   useEffect(() => {
     start();
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
+      // 如果已通过 close 按钮主动停止过，不再重复停止
+      if (!stoppedRef.current) {
+        doStop();
       }
     };
-  }, [start]);
+  }, [start, doStop]);
 
   return (
     <div className="qr-scanner-overlay">

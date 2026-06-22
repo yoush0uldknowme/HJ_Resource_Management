@@ -1,6 +1,6 @@
-import { approveOutboundRequestAction, rejectOutboundRequestAction } from "@/lib/actions/requests";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { approveOutboundRequestAction, rejectOutboundRequestAction } from "@/lib/request/actions";
+import { requireAdmin } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
 
 export default async function AdminRequestsPage({
   searchParams
@@ -25,10 +25,10 @@ export default async function AdminRequestsPage({
       <div className="page-head">
         <div>
           <h1>出库申请审批</h1>
-          <p>批准时请选择与申请型号一致的在库电机。审批后需由领用人在现场端扫码执行出库。</p>
+          <p>批准时请选择与申请型号一致的在库电机。审批后需由领用人在手机端扫码执行出库。</p>
         </div>
       </div>
-      {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>电机已分配，请通知领用人前往现场端扫码出库。</p></div> : null}
+      {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>电机已分配，请通知领用人前往手机端扫码出库。</p></div> : null}
       {params.rejected ? <div className="result-panel success"><h2>申请已拒绝</h2><p>申请人可在“我的申请”中查看审批意见。</p></div> : null}
       {params.error ? <div className="result-panel error"><h2>无法批准</h2><p>所选电机可能已经出库、型号不匹配或不存在。</p></div> : null}
 
@@ -57,26 +57,49 @@ export default async function AdminRequestsPage({
               </dl>
               {request.status === "pending" ? (
                 <div className="approval-actions">
+                  {/* 用户已预选电机时显示提示 */}
+                  {request.assignedMotorId && request.assignedMotor ? (
+                    <div style={{ marginBottom: "12px", padding: "10px 14px", background: "#e8f5f2", borderRadius: "8px", fontSize: "14px" }}>
+                      申请人已预选：<strong>{request.assignedMotor.motorCode}</strong>（{request.assignedMotor.name}）
+                      {request.assignedMotor.status !== "in_stock" ? (
+                        <span style={{ color: "var(--danger)", marginLeft: "8px" }}>⚠ 已不在库，请重新分配</span>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <form action={approveOutboundRequestAction}>
                     <input type="hidden" name="requestId" value={request.id} />
+                    {/* 如果用户已预选且仍需手动覆盖，可分配其他电机 */}
                     <div className="field">
-                      <label htmlFor={`motor-${request.id}`}>分配具体电机</label>
-                      <select id={`motor-${request.id}`} name="motorId" required defaultValue="">
+                      <label htmlFor={`motor-${request.id}`}>
+                        {request.assignedMotorId ? "更换分配（可选）" : "分配具体电机"}
+                      </label>
+                      <select id={`motor-${request.id}`} name="motorId" required defaultValue={request.assignedMotorId && request.assignedMotor?.status === "in_stock" ? String(request.assignedMotorId) : ""}>
                         <option value="" disabled>
-                          {candidates.length ? "选择在库电机" : "该型号暂无库存"}
+                          {candidates.length ? (request.assignedMotorId ? "使用用户预选（或选择一个替代）" : "选择在库电机") : "该型号暂无库存"}
                         </option>
-                        {candidates.map((motor) => (
-                          <option value={motor.id} key={motor.id}>
-                            {motor.motorCode} · {motor.name}
-                          </option>
-                        ))}
+                        {candidates.map((motor) => {
+                          const isPreSelected = motor.id === request.assignedMotorId;
+                          return (
+                            <option value={motor.id} key={motor.id}>
+                              {motor.motorCode} · {motor.name}{isPreSelected ? " [申请人预选]" : ""}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                     <div className="field">
                       <label htmlFor={`approve-remark-${request.id}`}>审批意见（选填）</label>
                       <input id={`approve-remark-${request.id}`} name="reviewRemark" />
                     </div>
-                    <button className="button" type="submit" disabled={!candidates.length}>批准并出库</button>
+                    <button
+                      className="button"
+                      type="submit"
+                      disabled={!candidates.length && !request.assignedMotorId}
+                    >
+                      {request.assignedMotorId && request.assignedMotor?.status === "in_stock"
+                        ? "批准（使用预选电机）"
+                        : "批准并出库"}
+                    </button>
                   </form>
                   <form action={rejectOutboundRequestAction}>
                     <input type="hidden" name="requestId" value={request.id} />

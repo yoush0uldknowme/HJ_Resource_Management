@@ -2,28 +2,28 @@ import Link from "next/link";
 import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
 import { MobileScanButton } from "@/components/mobile-scan-button";
-import { decodeActionResult } from "@/lib/action-result";
-import { mobileLookupMotorAction } from "@/lib/actions/motors";
-import { executeApprovedOutboundAction } from "@/lib/actions/requests";
-import { canManageMotors, requireMotorOperator } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { findMotorByScannedCode, normalizeScannedCode } from "@/lib/motor-lookup";
+import { decodeFromSearchParams } from "@/lib/result";
+import { mobileLookupMotorAction } from "@/lib/motor/actions";
+import { executeApprovedOutboundAction } from "@/lib/request/actions";
+import { isAdmin, requireOperator } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
+import { findMotorByCodeWithPhoto } from "@/lib/motor/lookup";
+import { normalizeScannedCode } from "@/lib/utils";
+import { getScanActions } from "@/lib/motor/flow";
 
 export default async function MobileScanPage({
   searchParams
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  const user = await requireMotorOperator();
-  const canManage = canManageMotors(user);
+  const user = await requireOperator(true);
+  const admin = isAdmin(user);
   const params = await searchParams;
-  const result = decodeActionResult(
-    new URLSearchParams(Object.entries(params).flatMap(([k, v]) => (v ? [[k, v]] : [])))
-  );
+  const result = decodeFromSearchParams(params);
 
   // 如果 URL 中有 code 参数，直接查询电机
   const scannedCode = normalizeScannedCode(params.code);
-  const motor = scannedCode ? await findMotorByScannedCode(prisma, scannedCode) : null;
+  const motor = scannedCode ? await findMotorByCodeWithPhoto(prisma, scannedCode) : null;
 
   // 检查该电机是否有已审批的出库申请
   const approvedRequest = motor
@@ -109,7 +109,7 @@ export default async function MobileScanPage({
                   执行出库
                 </button>
               </form>
-            ) : motor.status === "in_stock" && canManage ? (
+            ) : motor.status === "in_stock" && admin ? (
               <Link
                 className="button scan-action-outbound"
                 href={`/mobile/outbound?code=${encodeURIComponent(motor.motorCode)}`}
@@ -123,9 +123,12 @@ export default async function MobileScanPage({
               >
                 入库 / 归还
               </Link>
-            ) : motor.status === "in_stock" && !canManage ? (
-              <Link className="button secondary" href="/mobile/outbound">
-                申请出库
+            ) : motor.status === "in_stock" && !admin ? (
+              <Link
+                className="button"
+                href={`/mobile/outbound?code=${encodeURIComponent(motor.motorCode)}&model=${encodeURIComponent(motor.model)}`}
+              >
+                申请此电机出库
               </Link>
             ) : null}
           </div>
@@ -148,7 +151,7 @@ export default async function MobileScanPage({
       <MobileScanButton redirectTo="/mobile/scan" />
 
       <Link className="button secondary" href="/mobile">
-        返回现场端
+        返回手机端
       </Link>
     </main>
   );

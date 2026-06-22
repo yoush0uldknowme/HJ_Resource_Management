@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { requireMotorOperator } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { requireOperator } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
 
 export default async function UserPage() {
-  const user = await requireMotorOperator();
+  const user = await requireOperator();
   const [total, inStock, checkedOut, pendingRequests] = await Promise.all([
     prisma.motor.count(),
     prisma.motor.count({ where: { status: "in_stock" } }),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildMotorCode, motorCodeRange, motorModelPrefix } from "./motor-code";
+import { buildMotorCode, motorCodeRange, motorModelPrefix } from "./motor/code";
 
 describe("eight digit motor codes", () => {
   it("uses four model digits followed by a four digit sequence", () => {

@@ -1,38 +1,36 @@
 import { PrismaClient } from "@prisma/client";
-import { createHash } from "node:crypto";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-function hashPassword(password: string): string {
-  return createHash("sha256").update(password).digest("hex");
-}
-
 async function main() {
+  const adminHash = await bcrypt.hash("admin123", 10);
   await prisma.user.upsert({
     where: { username: "admin" },
     update: {
-      passwordHash: hashPassword("admin123"),
+      passwordHash: adminHash,
       role: "admin",
       isActive: true
     },
     create: {
       username: "admin",
-      passwordHash: hashPassword("admin123"),
+      passwordHash: adminHash,
       role: "admin"
     }
   });
 
+  const operatorHash = await bcrypt.hash("operator123", 10);
   await prisma.user.upsert({
-    where: { username: "viewer" },
+    where: { username: "operator" },
     update: {
-      passwordHash: hashPassword("viewer123"),
-      role: "viewer",
+      passwordHash: operatorHash,
+      role: "operator",
       isActive: true
     },
     create: {
-      username: "viewer",
-      passwordHash: hashPassword("viewer123"),
-      role: "viewer"
+      username: "operator",
+      passwordHash: operatorHash,
+      role: "operator"
     }
   });
 }

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
-import { clearLogsAction, deleteLogAction } from "@/lib/actions/logs";
-import { requireAdmin } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { transactionLabel } from "@/lib/status";
+import { clearLogsAction, deleteLogAction } from "@/lib/log/actions";
+import { requireAdmin } from "@/lib/auth/index";
+import { prisma } from "@/lib/prisma";
+import { transactionLabel } from "@/lib/motor/status";
 
 export default async function LogsPage() {
   await requireAdmin();
