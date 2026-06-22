@@ -355,3 +355,200 @@ export async function mobileLookupMotorAction(formData: FormData) {
     })
   );
 }
+
+// ── 批量入库 ──
+
+export async function batchInboundMotorAction(formData: FormData) {
+  const user = await requireOperator();
+  const rawCodes = String(formData.get("scannedCodes") ?? "").trim();
+  const remark = String(formData.get("remark") ?? "").trim();
+  const returnPath = "/mobile/inbound/batch";
+
+  if (!rawCodes) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "批量入库失败",
+        message: "请至少输入一个电机编号。"
+      })
+    );
+  }
+
+  // 解析多行编号（支持换行、逗号、空格分隔）
+  const codes = rawCodes
+    .split(/[\n,\s]+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  if (codes.length === 0) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "批量入库失败",
+        message: "未能解析出有效的电机编号。"
+      })
+    );
+  }
+
+  const succeeded: string[] = [];
+  const failed: { code: string; reason: string }[] = [];
+
+  for (const code of codes) {
+    try {
+      const motor = await findMotorByCode(prisma, code);
+      if (!motor) {
+        failed.push({ code, reason: "未找到电机" });
+        continue;
+      }
+
+      const next = applyInbound(
+        { status: motor.status, currentLocation: motor.currentLocation },
+        { operator: user.username, remark }
+      );
+
+      await executeMotorOutbound(prisma, motor.id, next.transaction, next.motor, [
+        "/motors",
+        "/logs",
+        `/motors/${motor.id}`
+      ]);
+      succeeded.push(motor.motorCode);
+    } catch (error) {
+      const reason =
+        error instanceof MotorFlowError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "未知错误";
+      failed.push({ code, reason });
+    }
+  }
+
+  const successCount = succeeded.length;
+  const failedCount = failed.length;
+
+  let title: string;
+  let message: string;
+  let type: "success" | "error";
+
+  if (failedCount === 0) {
+    title = "批量入库完成";
+    message = `全部 ${successCount} 台电机已成功入库：${succeeded.join("、")}。`;
+    type = "success";
+  } else if (successCount === 0) {
+    title = "批量入库失败";
+    message = `全部 ${failedCount} 台电机入库失败。`;
+    type = "error";
+  } else {
+    title = "批量入库部分成功";
+    message = `成功 ${successCount} 台：${succeeded.join("、")}。失败 ${failedCount} 台：${failed
+      .map((f) => `${f.code}(${f.reason})`)
+      .join("、")}。`;
+    type = "success";
+  }
+
+  redirect(resultUrl(returnPath, { type, title, message }));
+}
+
+// ── 批量出库（仅管理员）──
+
+export async function batchOutboundMotorAction(formData: FormData) {
+  const user = await requireAdmin();
+  const rawCodes = String(formData.get("scannedCodes") ?? "").trim();
+  const issuedBy = String(formData.get("issuedBy") ?? "").trim();
+  const vehicle = String(formData.get("vehicle") ?? "").trim();
+  const remark = String(formData.get("remark") ?? "").trim();
+  const returnPath = "/mobile/outbound/batch";
+
+  if (!rawCodes) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "批量出库失败",
+        message: "请至少输入一个电机编号。"
+      })
+    );
+  }
+
+  if (!issuedBy || !vehicle) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "批量出库失败",
+        message: "请填写出库人和使用车辆。"
+      })
+    );
+  }
+
+  const codes = rawCodes
+    .split(/[\n,\s]+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  if (codes.length === 0) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "批量出库失败",
+        message: "未能解析出有效的电机编号。"
+      })
+    );
+  }
+
+  const succeeded: string[] = [];
+  const failed: { code: string; reason: string }[] = [];
+
+  for (const code of codes) {
+    try {
+      const motor = await findMotorByCode(prisma, code);
+      if (!motor) {
+        failed.push({ code, reason: "未找到电机" });
+        continue;
+      }
+
+      const next = applyOutbound(
+        { status: motor.status, currentLocation: motor.currentLocation },
+        { operator: user.username, issuedBy, vehicle, remark }
+      );
+
+      await executeMotorOutbound(prisma, motor.id, next.transaction, next.motor, [
+        "/motors",
+        "/logs",
+        `/motors/${motor.id}`
+      ]);
+      succeeded.push(motor.motorCode);
+    } catch (error) {
+      const reason =
+        error instanceof MotorFlowError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : "未知错误";
+      failed.push({ code, reason });
+    }
+  }
+
+  const successCount = succeeded.length;
+  const failedCount = failed.length;
+
+  let title: string;
+  let message: string;
+  let type: "success" | "error";
+
+  if (failedCount === 0) {
+    title = "批量出库完成";
+    message = `全部 ${successCount} 台电机已出库给 ${issuedBy}，车辆：${vehicle}。`;
+    type = "success";
+  } else if (successCount === 0) {
+    title = "批量出库失败";
+    message = `全部 ${failedCount} 台电机出库失败。`;
+    type = "error";
+  } else {
+    title = "批量出库部分成功";
+    message = `成功 ${successCount} 台：${succeeded.join("、")}。失败 ${failedCount} 台：${failed
+      .map((f) => `${f.code}(${f.reason})`)
+      .join("、")}。`;
+    type = "success";
+  }
+
+  redirect(resultUrl(returnPath, { type, title, message }));
+}

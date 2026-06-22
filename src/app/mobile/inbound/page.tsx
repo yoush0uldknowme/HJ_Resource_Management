@@ -36,6 +36,10 @@ export default async function MobileInboundPage({
 
       <MobileScanButton redirectTo="/mobile/inbound" label="📷 扫码入库" />
 
+      <Link className="button secondary" href="/mobile/inbound/batch">
+        批量入库
+      </Link>
+
       <Link className="button secondary" href="/mobile">
         返回手机端
       </Link>

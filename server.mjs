@@ -3,6 +3,11 @@
  * 用 Node.js 内建 crypto 生成自签名证书，让手机端能正常调用摄像头。
  * 使用: npm run dev
  */
+
+// 开发环境下允许自签名证书，解决 Server Action / API route 内部
+// fetch 自身 HTTPS 时报 DEPTH_ZERO_SELF_SIGNED_CERT 的问题
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 import { createServer } from "node:https";
 import { parse } from "node:url";
 import next from "next";

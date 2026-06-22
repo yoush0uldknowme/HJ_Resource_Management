@@ -25,18 +25,19 @@ Console.WriteLine();
 
 if (lanUrls.Count > 0)
 {
-    Console.WriteLine("  ─── 手机访问 (HTTPS) ───");
+    Console.WriteLine("  ─── 局域网访问 (HTTPS) ───");
     foreach (var lanUrl in lanUrls)
     {
-        Console.WriteLine($"  现场入口 : {lanUrl}/mobile");
+        Console.WriteLine($"  电脑端   : {lanUrl}/admin");
+        Console.WriteLine($"  手机端   : {lanUrl}/mobile");
         Console.WriteLine($"  登录页   : {lanUrl}/login");
     }
     Console.WriteLine();
-    Console.WriteLine("  ⚠ 手机首次访问需点击「高级 → 继续前往」（自签名证书）");
+    Console.WriteLine("  ⚠ 首次访问需点击「高级 → 继续前往」（自签名证书）");
 }
 else
 {
-    Console.WriteLine("  ─── 手机访问 ───");
+    Console.WriteLine("  ─── 局域网访问 ───");
     Console.WriteLine("  未检测到可用局域网 IP，请确认电脑已联网。");
 }
 Console.WriteLine();
@@ -152,7 +153,10 @@ try
         if (lanUrls.Count > 0)
         {
             foreach (var u in lanUrls)
+            {
+                Console.WriteLine($"  局域网 : {u}/admin");
                 Console.WriteLine($"  手机端 : {u}/mobile");
+            }
         }
         Console.WriteLine();
         Console.WriteLine("══════════════════════════════════════════════════");

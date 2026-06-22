@@ -1641,6 +1641,8 @@ th {
   margin: 0 auto;
   display: grid;
   gap: 18px;
+  padding: 16px 14px 32px;
+  min-height: 100vh;
 }
 
 .mobile-home {

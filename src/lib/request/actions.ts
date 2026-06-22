@@ -62,6 +62,90 @@ export async function createOutboundRequestAction(formData: FormData) {
   redirect(`${returnPath}?submitted=1`);
 }
 
+// ── 批量创建出库申请 ──
+
+export async function batchCreateOutboundRequestAction(formData: FormData) {
+  const user = await requireOperator();
+  const rawCodes = String(formData.get("scannedCodes") ?? "").trim();
+  const targetPerson = String(formData.get("targetPerson") ?? "").trim();
+  const destination = String(formData.get("destination") ?? "").trim();
+  const remark = String(formData.get("remark") ?? "").trim() || undefined;
+  const returnPath = String(formData.get("returnPath") ?? "") === "/mobile/requests"
+    ? "/mobile/requests"
+    : "/requests";
+
+  if (!rawCodes) {
+    redirect(`${returnPath}?error=empty`);
+  }
+
+  if (!targetPerson || !destination) {
+    redirect(`${returnPath}?error=missing_fields`);
+  }
+
+  // 解析多个编号
+  const codes = rawCodes
+    .split(/[\n,\s]+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  if (codes.length === 0) {
+    redirect(`${returnPath}?error=empty`);
+  }
+
+  const succeeded: string[] = [];
+  const failed: { code: string; reason: string }[] = [];
+
+  for (const code of codes) {
+    try {
+      const motor = await findMotorByCode(prisma, code);
+      if (!motor) {
+        failed.push({ code, reason: "未找到电机" });
+        continue;
+      }
+      if (motor.status !== "in_stock") {
+        failed.push({ code, reason: `状态为 ${motor.status}，非在库` });
+        continue;
+      }
+
+      await prisma.outboundRequest.create({
+        data: {
+          requesterId: user.id,
+          model: motor.model,
+          targetPerson,
+          destination,
+          remark,
+          assignedMotorId: motor.id
+        }
+      });
+      succeeded.push(motor.motorCode);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "未知错误";
+      failed.push({ code, reason });
+    }
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/requests");
+  revalidatePath("/user");
+
+  const successCount = succeeded.length;
+  const failedCount = failed.length;
+
+  if (failedCount === 0) {
+    redirect(
+      `${returnPath}?submitted=1&success=${successCount}&codes=${encodeURIComponent(succeeded.join(","))}`
+    );
+  } else if (successCount === 0) {
+    redirect(
+      `${returnPath}?error=batch_failed&failed=${failedCount}`
+    );
+  } else {
+    redirect(
+      `${returnPath}?submitted=1&success=${successCount}&failed=${failedCount}&failedCodes=${encodeURIComponent(failed.map((f) => f.code).join(","))}`
+    );
+  }
+}
+
 // ── 审批通过（事务保护） ──
 
 export async function approveOutboundRequestAction(formData: FormData) {

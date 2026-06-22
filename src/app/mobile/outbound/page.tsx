@@ -49,6 +49,8 @@ export default async function MobileOutboundPage({
 
         <MobileScanButton redirectTo="/mobile/outbound" label="📷 扫码出库" />
 
+        <Link className="button secondary" href="/mobile/outbound/batch">批量出库</Link>
+
         <Link className="button secondary" href="/mobile">返回手机端</Link>
       </main>
     );
@@ -216,6 +218,8 @@ export default async function MobileOutboundPage({
       ) : null}
 
       <MobileScanButton redirectTo="/mobile/outbound" label="📷 扫码选择电机" />
+
+      <Link className="button secondary" href="/mobile/outbound/batch-request">批量申请出库</Link>
 
       <Link className="button secondary" href="/mobile/requests">查看我的申请</Link>
       <Link className="button secondary" href="/mobile">返回手机端</Link>
