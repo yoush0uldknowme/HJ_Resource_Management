@@ -13,7 +13,7 @@ describe("motor flow transitions", () => {
       transactionType: "inbound",
       operator: "admin",
       location: "在库",
-      remark: "扫码直接入库"
+      remark: "编号确认入库"
     });
   });
 

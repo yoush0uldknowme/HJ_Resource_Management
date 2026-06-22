@@ -1,0 +1,98 @@
+import { approveOutboundRequestAction, rejectOutboundRequestAction } from "@/lib/actions/requests";
+import { requireAdmin } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+
+export default async function AdminRequestsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ approved?: string; rejected?: string; error?: string }>;
+}) {
+  await requireAdmin();
+  const params = await searchParams;
+  const [requests, availableMotors] = await Promise.all([
+    prisma.outboundRequest.findMany({
+      include: { requester: true, assignedMotor: true },
+      orderBy: [{ status: "asc" }, { createdAt: "desc" }]
+    }),
+    prisma.motor.findMany({
+      where: { status: "in_stock" },
+      orderBy: [{ model: "asc" }, { motorCode: "asc" }]
+    })
+  ]);
+
+  return (
+    <div className="request-page">
+      <div className="page-head">
+        <div>
+          <h1>出库申请审批</h1>
+          <p>批准时请选择与申请型号一致的在库电机。审批后需由领用人在现场端扫码执行出库。</p>
+        </div>
+      </div>
+      {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>电机已分配，请通知领用人前往现场端扫码出库。</p></div> : null}
+      {params.rejected ? <div className="result-panel success"><h2>申请已拒绝</h2><p>申请人可在“我的申请”中查看审批意见。</p></div> : null}
+      {params.error ? <div className="result-panel error"><h2>无法批准</h2><p>所选电机可能已经出库、型号不匹配或不存在。</p></div> : null}
+
+      <section className="request-list">
+        {requests.map((request) => {
+          const candidates = availableMotors.filter((motor) => motor.model === request.model);
+          return (
+            <article className="request-card admin-request-card" key={request.id}>
+              <div className="request-card-head">
+                <div>
+                  <span>申请型号</span>
+                  <strong>{request.model}</strong>
+                  <small>{request.requester.username} · {request.createdAt.toLocaleString("zh-CN")}</small>
+                </div>
+                <span className={`badge request-${request.status}`}>
+                  {request.status === "pending" ? "待审批" : request.status === "approved" ? "已批准·待扫码" : request.status === "completed" ? "已完成" : "已拒绝"}
+                </span>
+              </div>
+              <dl>
+                <div><dt>领用人</dt><dd>{request.targetPerson}</dd></div>
+                <div><dt>车辆 / 去向</dt><dd>{request.destination}</dd></div>
+                <div><dt>备注</dt><dd>{request.remark ?? "-"}</dd></div>
+                <div><dt>已分配</dt><dd>{request.assignedMotor?.motorCode ?? "-"}</dd></div>
+                <div><dt>审批人</dt><dd>{request.reviewedBy ?? "-"}</dd></div>
+                <div><dt>审批意见</dt><dd>{request.reviewRemark ?? "-"}</dd></div>
+              </dl>
+              {request.status === "pending" ? (
+                <div className="approval-actions">
+                  <form action={approveOutboundRequestAction}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <div className="field">
+                      <label htmlFor={`motor-${request.id}`}>分配具体电机</label>
+                      <select id={`motor-${request.id}`} name="motorId" required defaultValue="">
+                        <option value="" disabled>
+                          {candidates.length ? "选择在库电机" : "该型号暂无库存"}
+                        </option>
+                        {candidates.map((motor) => (
+                          <option value={motor.id} key={motor.id}>
+                            {motor.motorCode} · {motor.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label htmlFor={`approve-remark-${request.id}`}>审批意见（选填）</label>
+                      <input id={`approve-remark-${request.id}`} name="reviewRemark" />
+                    </div>
+                    <button className="button" type="submit" disabled={!candidates.length}>批准并出库</button>
+                  </form>
+                  <form action={rejectOutboundRequestAction}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <div className="field">
+                      <label htmlFor={`reject-remark-${request.id}`}>拒绝原因</label>
+                      <input id={`reject-remark-${request.id}`} name="reviewRemark" required />
+                    </div>
+                    <button className="button danger" type="submit">拒绝申请</button>
+                  </form>
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </section>
+      {requests.length === 0 ? <p className="muted empty-state">暂无出库申请。</p> : null}
+    </div>
+  );
+}

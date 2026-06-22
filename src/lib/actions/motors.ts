@@ -60,10 +60,13 @@ export async function createMotorAction(formData: FormData) {
     remark: formData.get("remark") || undefined
   });
 
-  const count = await prisma.motor.count({
-    where: { motorCode: motorCodeRange(parsed.model) }
+  const latest = await prisma.motor.findFirst({
+    where: { motorCode: motorCodeRange(parsed.model) },
+    orderBy: { motorCode: "desc" },
+    select: { motorCode: true }
   });
-  const motorCode = buildMotorCode(parsed.model, count + 1);
+  const lastSequence = latest ? Number(latest.motorCode.slice(-4)) || 0 : 0;
+  const motorCode = buildMotorCode(parsed.model, lastSequence + 1);
 
   const motor = await prisma.motor.create({
     data: {
@@ -132,7 +135,7 @@ async function performInbound(formData: FormData, returnPath: string) {
       resultUrl(returnPath, {
         type: "error",
         title: "入库失败",
-        message: "请先扫码或输入电机编码。"
+        message: "请先输入电机编号。"
       })
     );
   }
@@ -177,7 +180,7 @@ async function performInbound(formData: FormData, returnPath: string) {
 }
 
 async function performOutbound(formData: FormData, returnPath: string) {
-  const user = await requireMotorOperator();
+  const user = await requireAdmin();
   const scannedCode = normalizeScannedCode(formData.get("scannedCode"));
   const issuedBy = String(formData.get("issuedBy") ?? "").trim();
   const vehicle = String(formData.get("vehicle") ?? "").trim();
@@ -188,7 +191,7 @@ async function performOutbound(formData: FormData, returnPath: string) {
       resultUrl(returnPath, {
         type: "error",
         title: "出库失败",
-        message: "请先扫码或输入电机编码。"
+        message: "请先输入电机编号。"
       })
     );
   }
@@ -283,7 +286,7 @@ export async function mobileLookupMotorAction(formData: FormData) {
       resultUrl("/mobile/scan", {
         type: "error",
         title: "查询失败",
-        message: "请先扫码或输入电机编码。"
+        message: "请先输入电机编号。"
       })
     );
   }

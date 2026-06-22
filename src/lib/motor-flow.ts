@@ -23,15 +23,12 @@ export function applyInbound(
   input: { operator: string; remark?: string }
 ): { motor: MotorSnapshot; transaction: TransactionDraft } {
   return {
-    motor: {
-      status: "in_stock",
-      currentLocation: "在库"
-    },
+    motor: { status: "in_stock", currentLocation: "在库" },
     transaction: {
       transactionType: "inbound",
       operator: input.operator,
       location: "在库",
-      remark: input.remark || "扫码直接入库"
+      remark: input.remark || "编号确认入库"
     }
   };
 }
@@ -43,12 +40,8 @@ export function applyOutbound(
   if (motor.status !== "in_stock") {
     throw new MotorFlowError("只有在库电机可以出库", "OUTBOUND_NOT_IN_STOCK");
   }
-
   return {
-    motor: {
-      status: "checked_out",
-      currentLocation: input.vehicle
-    },
+    motor: { status: "checked_out", currentLocation: input.vehicle },
     transaction: {
       transactionType: "outbound",
       operator: input.operator,

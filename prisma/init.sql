@@ -53,3 +53,21 @@ CREATE TABLE IF NOT EXISTS "MotorTransaction" (
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "MotorTransaction_motorId_fkey" FOREIGN KEY ("motorId") REFERENCES "Motor" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS "OutboundRequest" (
+  "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  "requesterId" INTEGER NOT NULL,
+  "model" TEXT NOT NULL,
+  "targetPerson" TEXT NOT NULL,
+  "destination" TEXT NOT NULL,
+  "remark" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'pending',
+  "assignedMotorId" INTEGER,
+  "reviewedBy" TEXT,
+  "reviewedAt" DATETIME,
+  "reviewRemark" TEXT,
+  "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "OutboundRequest_requesterId_fkey" FOREIGN KEY ("requesterId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "OutboundRequest_assignedMotorId_fkey" FOREIGN KEY ("assignedMotorId") REFERENCES "Motor" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+);

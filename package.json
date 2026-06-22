@@ -11,10 +11,12 @@
     "prisma:generate": "prisma generate",
     "db:init": "sqlite3 prisma/dev.db \".read prisma/init.sql\"",
     "prisma:push": "prisma db push",
+    "migrate:motor-codes": "tsx prisma/migrate-motor-codes.ts",
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",
+    "html5-qrcode": "^2.3.8",
     "next": "^15.3.2",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",

@@ -5,9 +5,12 @@ import { prisma } from "@/lib/db";
 export default async function MobileHomePage() {
   const user = await requireMotorOperator();
   const canManage = canManageMotors(user);
-  const [inStock, checkedOut] = await Promise.all([
+  const [inStock, checkedOut, pendingRequests] = await Promise.all([
     prisma.motor.count({ where: { status: "in_stock" } }),
-    prisma.motor.count({ where: { status: "checked_out" } })
+    prisma.motor.count({ where: { status: "checked_out" } }),
+    prisma.outboundRequest.count({
+      where: canManage ? { status: "pending" } : { requesterId: user.id, status: "pending" }
+    })
   ]);
 
   return (
@@ -34,6 +37,9 @@ export default async function MobileHomePage() {
         </Link>
         <Link className="mobile-quick-card" href="/mobile/outbound">
           <span>04</span><strong>电机出库</strong><small>登记领用和去向</small>
+        </Link>
+        <Link className="mobile-quick-card" href={canManage ? "/admin/requests" : "/mobile/requests"}>
+          <span>05</span><strong>{canManage ? "待审批" : "我的申请"}</strong><small>{pendingRequests} 条等待处理</small>
         </Link>
       </section>
 

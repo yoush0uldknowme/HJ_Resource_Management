@@ -14,6 +14,7 @@ model User {
   role         String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
+  outboundRequests OutboundRequest[]
 }
 
 model Motor {
@@ -34,6 +35,25 @@ model Motor {
   updatedAt       DateTime           @updatedAt
   photos          MotorPhoto[]
   transactions    MotorTransaction[]
+  outboundRequests OutboundRequest[] @relation("AssignedMotor")
+}
+
+model OutboundRequest {
+  id              Int       @id @default(autoincrement())
+  requesterId     Int
+  requester       User      @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  model           String
+  targetPerson    String
+  destination     String
+  remark          String?
+  status          String    @default("pending")
+  assignedMotorId Int?
+  assignedMotor   Motor?    @relation("AssignedMotor", fields: [assignedMotorId], references: [id], onDelete: SetNull)
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewRemark    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model MotorPhoto {
