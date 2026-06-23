@@ -18,16 +18,6 @@ export function AppShell({
 }) {
   const pathname = usePathname();
 
-  // 手机端：只渲染底部导航栏 + 内容，不渲染顶部导航
-  if (pathname.startsWith("/mobile")) {
-    return (
-      <>
-        {children}
-        <MobileTabBar isAdmin={canManage} />
-      </>
-    );
-  }
-
   const links = useMemo(
     () => [
       { href: "/", label: "首页" },
@@ -43,6 +33,16 @@ export function AppShell({
     ],
     [canManage, pendingRequests]
   );
+
+  // 手机端：只渲染底部导航栏 + 内容，不渲染顶部导航
+  if (pathname.startsWith("/mobile")) {
+    return (
+      <>
+        {children}
+        <MobileTabBar isAdmin={canManage} />
+      </>
+    );
+  }
 
   return (
     <div className="app-shell">

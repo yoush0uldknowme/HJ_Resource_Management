@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "HJ 资源管理系统",
-  description: "电机资源管理系统 - 建档、入库、出库、扫码、审批",
+  description: "电机资源管理系统 — 建档、入库、出库、扫码、审批",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -24,11 +24,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f766e",
+  themeColor: "#0a4a45",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -42,6 +42,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="zh-CN">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body>
         <PWARegister />
         {user ? (
