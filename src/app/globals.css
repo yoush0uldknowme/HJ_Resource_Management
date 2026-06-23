@@ -908,88 +908,116 @@ tr:hover td { background: var(--color-bg-hover); }
   z-index: 0;
 }
 
-/* Panel C 升级为中心玻璃有机形状 */
+/* Panel C — 毛玻璃长条阵列容器 */
 .cinematic-panel-c {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 72%;
-  height: 62%;
+  inset: -10% -20%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden;
 }
 
-/* 有机 blob 形状 — 多色斜向渐变 + 玻璃质感 */
-.glass-blob {
-  position: absolute;
-  inset: 0;
-  border-radius: 40% 60% 55% 45% / 55% 45% 60% 40%;
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 60, 90, 0.35) 0%,
-      rgba(255, 100, 80, 0.25) 20%,
-      rgba(255, 150, 100, 0.18) 35%,
-      rgba(80, 200, 230, 0.22) 55%,
-      rgba(100, 160, 255, 0.18) 70%,
-      rgba(140, 100, 255, 0.12) 85%,
-      rgba(255, 80, 120, 0.20) 100%
-    );
-  filter: blur(0px);
-  animation:
-    blob-morph 12s ease-in-out infinite,
-    blob-float 14s ease-in-out infinite;
+/* ------------------------------------------------------------------ */
+/*  GLASS SLATS — 斜向毛玻璃长条阵列（Raycast 风格）     */
+/* ------------------------------------------------------------------ */
+
+.glass-slats-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  width: 140%;
+  height: 140%;
+  transform: rotate(-14deg);
+  pointer-events: none;
+}
+
+.glass-slat {
+  flex-shrink: 0;
+  width: 110px;
+  height: 100%;
+  border-radius: 36px;
+  position: relative;
+
+  /* 毛玻璃底色 —— 颜色由 CSS 变量控制，每根不同 */
+  background: hsla(var(--slat-hue, 0), 80%, 60%, 0.13);
+  backdrop-filter: blur(8px) saturate(1.6);
+  -webkit-backdrop-filter: blur(8px) saturate(1.6);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    0 0 80px rgba(255, 60, 90, 0.15),
-    0 0 120px rgba(80, 200, 230, 0.10),
-    inset 0 0 60px rgba(255, 255, 255, 0.03);
+    inset 0 0 40px rgba(255, 255, 255, 0.05),
+    0 0 60px 20px hsla(var(--slat-hue, 0), 80%, 60%, 0.07);
+
+  /* 动画 */
+  animation:
+    slat-color-drift 3s ease-in-out infinite alternate,
+    slat-float 1.6s ease-in-out infinite alternate;
+  animation-delay: var(--slat-delay, 0s);
+  transition: background 4s ease, box-shadow 4s ease;
+
+  /* 随机遮盖层级 */
+  z-index: calc(var(--slat-index, 0) + 1);
+  opacity: 0.55;
 }
 
-/* 玻璃高光层 */
-.glass-blob::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    linear-gradient(
-      125deg,
-      rgba(255, 255, 255, 0.12) 0%,
-      rgba(255, 255, 255, 0.04) 25%,
-      transparent 50%,
-      rgba(255, 255, 255, 0.02) 75%,
-      rgba(255, 255, 255, 0.08) 100%
-    );
-  backdrop-filter: blur(1px);
-  -webkit-backdrop-filter: blur(1px);
-  mix-blend-mode: overlay;
+/* 交替视觉差：不同宽度 + 透明度，制造层次感 */
+.glass-slat:nth-child(2n) {
+  opacity: 0.35;
+  width: 90px;
+}
+.glass-slat:nth-child(3n) {
+  opacity: 0.65;
+  width: 120px;
+}
+.glass-slat:nth-child(5n) {
+  opacity: 0.25;
+  width: 70px;
+}
+.glass-slat:nth-child(7n) {
+  opacity: 0.45;
+  width: 100px;
 }
 
-/* 内部光泽条纹 — 跑马灯/光线扫过效果 */
-.glass-blob::after {
+/* 长条内高光 — 毛玻璃质感 */
+.glass-slat::before {
   content: "";
   position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background:
-    linear-gradient(
-      105deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.08) 15%,
-      rgba(255, 255, 255, 0.18) 22%,
-      rgba(255, 200, 220, 0.15) 28%,
-      transparent 38%,
-      transparent 65%,
-      rgba(255, 255, 255, 0.05) 78%,
-      rgba(180, 220, 255, 0.10) 85%,
-      transparent 95%
-    );
-  background-size: 300% 100%;
-  animation: marquee-sweep 6s linear infinite;
-  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 70%);
+  top: 10%;
+  left: 15%;
+  width: 70%;
+  height: 35%;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* 颜色漂移动画 —— 每根长条颜色会缓慢变化 */
+@keyframes slat-color-drift {
+  0% {
+    background: hsla(var(--slat-hue, 0), 75%, 55%, 0.13);
+    box-shadow: 0 0 60px 20px hsla(var(--slat-hue, 0), 75%, 55%, 0.06);
+  }
+  50% {
+    background: hsla(calc(var(--slat-hue, 0) + 60), 80%, 60%, 0.18);
+    box-shadow: 0 0 80px 30px hsla(calc(var(--slat-hue, 0) + 60), 80%, 60%, 0.10);
+  }
+  100% {
+    background: hsla(calc(var(--slat-hue, 0) + 120), 70%, 50%, 0.11);
+    box-shadow: 0 0 60px 20px hsla(calc(var(--slat-hue, 0) + 120), 70%, 50%, 0.05);
+  }
+}
+
+@keyframes slat-float {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-16px); }
 }
 
 /* 背景点阵 */

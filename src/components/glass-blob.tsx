@@ -1,15 +1,31 @@
 "use client";
 
 /**
- * GlassBlob — 中心有机渐变玻璃形状
- * Raycast 风格的核心视觉元素：
- * - 多色斜向渐变（粉红 → 橙 → 青 → 蓝）
- * - CSS 动态形变（border-radius morphing）
- * - 玻璃高光层 + 跑马灯扫光
- * - 漂浮动画
+ * GlassSlats — 斜向毛玻璃长条阵列
+ * Raycast 官网风格的核心视觉：
+ * - 多根斜向长条并排，四周圆角
+ * - 毛玻璃质感（backdrop-filter: blur + 半透明）
+ * - 颜色随机变化 + 互相遮盖
+ * - 缓慢漂移动画
  */
-export function GlassBlob() {
+
+const SLAT_COUNT = 7;
+
+export function GlassSlats() {
   return (
-    <div className="glass-blob" aria-hidden="true" />
+    <div className="glass-slats-container" aria-hidden="true">
+      {Array.from({ length: SLAT_COUNT }, (_, i) => (
+        <div
+          key={i}
+          className="glass-slat"
+          style={{
+            "--slat-index": i,
+            "--slat-hue": `${i * 51}`,
+            "--slat-delay": `${i * 0.7}s`,
+            "--slat-offset": `${i * 14 - 42}px`,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
   );
 }

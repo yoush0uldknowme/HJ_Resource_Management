@@ -2,7 +2,7 @@ import Link from "next/link";
 import { isAdmin, getCurrentUser } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { HeroMouseGlow } from "@/components/hero-mouse-glow";
-import { GlassBlob } from "@/components/glass-blob";
+import { GlassSlats } from "@/components/glass-blob";
 import { MarqueeLights } from "@/components/marquee-lights";
 import { AnimatedCounter } from "@/components/animated-counter";
 
@@ -29,7 +29,7 @@ export default async function HomePage() {
 
       {/* 中心玻璃有机形状容器 */}
       <div className="cinematic-panel-c" aria-hidden="true">
-        <GlassBlob />
+        <GlassSlats />
       </div>
 
       {/* 跑马灯光线 */}
