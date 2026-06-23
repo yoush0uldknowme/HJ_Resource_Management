@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { isAdmin, getCurrentUser } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
+import { HeroMouseGlow } from "@/components/hero-mouse-glow";
+import { AnimatedCounter } from "@/components/animated-counter";
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -14,55 +16,62 @@ export default async function HomePage() {
     prisma.motor.count({ where: { status: "draft" } })
   ]);
 
-  const matrixLines = [
-    "60200001  GM6020  READY  VECTOR  0xA1F9",
-    "35080012  GM3508  STOCK  SIGNAL  0x4E22",
-    "20060008  M2006   FLOW   CHECKSUM  0x7C90",
-    "HJ  RESOURCE  ORBIT  ▸  MOTOR  STATUS  ONLINE",
-    "INBOUND  ⇢  OUTBOUND  ⇢  ARCHIVE  ⇢  FIELD  SYNC",
-    "6020  3508  2006  4310  8006  0001  0002  0003",
-    "WAREHOUSE  NODE  ACTIVE  ▸  TRACE  LOG  LIVE",
-    "MOTOR  RESOURCE  CONTROL  SYSTEM  v2.0",
-    "0xDEAD  0xBEEF  0xCAFE  0xBA5E  0xFACE  0xFEED"
-  ];
-
   return (
     <div className="cinematic-home">
-      <div className="cinematic-matrix" aria-hidden="true">
-        {Array.from({ length: 18 }).map((_, index) => (
-          <span key={index}>{matrixLines[index % matrixLines.length]}</span>
-        ))}
-      </div>
-      <div className="cinematic-glow cinematic-glow-a" aria-hidden="true" />
-      <div className="cinematic-glow cinematic-glow-b" aria-hidden="true" />
-      <div className="cinematic-orbit" aria-hidden="true">
-        <div className="cinematic-orbit-ring ring-a" />
-        <div className="cinematic-orbit-ring ring-b" />
-        <div className="cinematic-orbit-ring ring-c" />
-      </div>
+      {/* 鼠标跟随光斑 */}
+      <HeroMouseGlow />
 
+      {/* 背景点阵 */}
+      <div className="cinematic-grid" aria-hidden="true" />
+
+      {/* 第三块光面板 */}
+      <div className="cinematic-panel-c" aria-hidden="true" />
+
+      {/* 主体 */}
       <section className="cinematic-stage">
         <div className="cinematic-status">
           <span>系统在线</span>
           <span>资源同步完成</span>
         </div>
+
         <div className="cinematic-title-block">
           <span className="cinematic-kicker">HJ RESOURCE ORBIT</span>
           <h1>电机资源管理系统</h1>
           <p>面向仓库、实验室和现场领用的电机资源中枢。</p>
-          <strong>{total}</strong>
+          <strong>
+            <AnimatedCounter value={total} />
+          </strong>
           <small>TOTAL MOTORS</small>
         </div>
+
         <div className="cinematic-actions">
-          <Link href={primaryHref}>{user ? "进入工作台" : "登录系统"}</Link>
+          <Link href={primaryHref}>
+            {user ? "进入工作台" : "登录系统"}
+          </Link>
           <Link href="/admin">管理端</Link>
           <Link href="/user">用户端</Link>
           <Link href="/mobile">手机端</Link>
         </div>
+
         <div className="cinematic-metrics" aria-label="资源概览">
-          <div><span>IN STOCK</span><strong>{inStock}</strong></div>
-          <div><span>CHECKED OUT</span><strong>{checkedOut}</strong></div>
-          <div><span>PENDING</span><strong>{pending}</strong></div>
+          <div>
+            <span>在库</span>
+            <strong>
+              <AnimatedCounter value={inStock} duration={1500} />
+            </strong>
+          </div>
+          <div>
+            <span>已出库</span>
+            <strong>
+              <AnimatedCounter value={checkedOut} duration={1500} />
+            </strong>
+          </div>
+          <div>
+            <span>待处理</span>
+            <strong>
+              <AnimatedCounter value={pending} duration={1500} />
+            </strong>
+          </div>
         </div>
       </section>
     </div>
