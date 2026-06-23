@@ -1,5 +1,5 @@
 export function ScanCodeField({
-  placeholder = "输入八位电机编号",
+  placeholder = "输入电机编号（如 GM6020-0001）",
   defaultValue
 }: {
   placeholder?: string;
@@ -12,12 +12,11 @@ export function ScanCodeField({
         id="scannedCode"
         name="scannedCode"
         required
-        inputMode="numeric"
         autoComplete="off"
         placeholder={placeholder}
         defaultValue={defaultValue}
       />
-      <p className="muted">输入电机上的八位数字编号，例如 60200001。</p>
+      <p className="muted">输入电机编号，格式如 GM6020-0001。</p>
     </div>
   );
 }

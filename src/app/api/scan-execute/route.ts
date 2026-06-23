@@ -216,6 +216,9 @@ export async function POST(request: NextRequest) {
         }
       );
 
+      const newExecutedCount = approvedRequest.executedCount + 1;
+      const isFullyCompleted = newExecutedCount >= approvedRequest.quantity;
+
       await prisma.$transaction([
         prisma.motor.update({
           where: { id: motor.id },
@@ -225,9 +228,13 @@ export async function POST(request: NextRequest) {
             transactions: { create: next.transaction }
           }
         }),
-        prisma.outboundRequest.updateMany({
-          where: { id: approvedRequest.id, status: "approved" },
-          data: { status: "completed" }
+        prisma.outboundRequest.update({
+          where: { id: approvedRequest.id },
+          data: {
+            executedCount: newExecutedCount,
+            status: isFullyCompleted ? "completed" : "approved",
+            assignedMotorId: isFullyCompleted ? approvedRequest.assignedMotorId : null,
+          }
         })
       ]);
 
@@ -238,7 +245,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         ok: true,
         motorCode: motor.motorCode,
-        message: `${motor.motorCode} 已出库给 ${approvedRequest.targetPerson} ✓`
+        message: `${motor.motorCode} 已出库给 ${approvedRequest.targetPerson}（${newExecutedCount}/${approvedRequest.quantity}）✓`
       });
     }
 

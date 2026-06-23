@@ -9,12 +9,17 @@ export async function deleteLogAction(formData: FormData) {
   const id = Number(formData.get("id"));
   if (!Number.isInteger(id) || id <= 0) return;
 
-  await prisma.motorTransaction.deleteMany({ where: { id } });
+  await prisma.motorTransaction.updateMany({
+    where: { id },
+    data: { deleted: true, deletedAt: new Date() }
+  });
   revalidatePath("/logs");
 }
 
 export async function clearLogsAction() {
   await requireAdmin();
-  await prisma.motorTransaction.deleteMany();
+  await prisma.motorTransaction.updateMany({
+    data: { deleted: true, deletedAt: new Date() }
+  });
   revalidatePath("/logs");
 }

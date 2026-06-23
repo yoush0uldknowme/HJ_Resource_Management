@@ -135,13 +135,27 @@ export default async function OutboundPage({
             </div>
           </div>
 
+          <div className="field">
+            <label htmlFor="quantity">③ 数量</label>
+            <input
+              id="quantity"
+              name="quantity"
+              type="number"
+              min="1"
+              max="99"
+              defaultValue="1"
+              required
+            />
+            <small className="muted">申请该型号几台电机</small>
+          </div>
+
           <div className="form-grid">
             <div className="field">
-              <label htmlFor="targetPerson">③ 领用人</label>
+              <label htmlFor="targetPerson">④ 领用人</label>
               <input id="targetPerson" name="targetPerson" required />
             </div>
             <div className="field">
-              <label htmlFor="destination">④ 车辆 / 去向</label>
+              <label htmlFor="destination">⑤ 车辆 / 去向</label>
               <input id="destination" name="destination" required placeholder="例如：英雄车、步兵 1 号" />
             </div>
           </div>

@@ -25,6 +25,7 @@ export function AdminNotifier({ isAdmin }: { isAdmin: boolean }) {
   const [toast, setToast] = useState<NotificationData | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -70,57 +71,69 @@ export function AdminNotifier({ isAdmin }: { isAdmin: boolean }) {
       Notification.requestPermission();
     }
 
-    // 建立 SSE 连接
-    const eventSource = new EventSource("/api/events/requests");
+    // 建立 SSE 连接（使用 ref 以便重连时更新）
+    const connectSSE = () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data: NotificationData = JSON.parse(event.data);
+      const eventSource = new EventSource("/api/events/requests");
+      eventSourceRef.current = eventSource;
 
-        if (data.type === "initial") {
-          // 初始连接，不弹通知
-          return;
-        }
+      eventSource.onmessage = (event) => {
+        try {
+          const data: NotificationData = JSON.parse(event.data);
 
-        if (data.type === "new_request") {
-          // 1. 播放提示音
-          playBeep();
-
-          // 2. 弹浏览器通知
-          if ("Notification" in window && Notification.permission === "granted") {
-            const n = new Notification("新的出库申请", {
-              body: `${data.requester} 申请 ${data.model} × ${data.quantity}`,
-              icon: "/icon-192.png",
-              tag: `request-${data.requestId}`,
-            });
-            n.onclick = () => {
-              window.focus();
-              router.push("/admin/requests");
-              n.close();
-            };
+          if (data.type === "initial") {
+            // 初始连接，不弹通知
+            return;
           }
 
-          // 3. 页面内 Toast
-          showToast(data);
+          if (data.type === "new_request") {
+            // 1. 播放提示音
+            playBeep();
 
-          // 4. 刷新页面数据（导航栏待审批数会更新）
-          router.refresh();
+            // 2. 弹浏览器通知
+            if ("Notification" in window && Notification.permission === "granted") {
+              const n = new Notification("新的出库申请", {
+                body: `${data.requester} 申请 ${data.model} × ${data.quantity}`,
+                icon: "/icon-192.png",
+                tag: `request-${data.requestId}`,
+              });
+              n.onclick = () => {
+                window.focus();
+                router.push("/admin/requests");
+                n.close();
+              };
+            }
+
+            // 3. 页面内 Toast
+            showToast(data);
+
+            // 4. 刷新页面数据（导航栏待审批数会更新）
+            router.refresh();
+          }
+        } catch {
+          // 解析失败，忽略
         }
-      } catch {
-        // 解析失败，忽略
-      }
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        // 5 秒后重连
+        setTimeout(() => {
+          connectSSE();
+        }, 5000);
+      };
     };
 
-    eventSource.onerror = () => {
-      // 连接断开，5 秒后自动重连
-      eventSource.close();
-      setTimeout(() => {
-        // 组件可能已卸载，用新 EventSource 重连
-      }, 5000);
-    };
+    connectSSE();
 
     return () => {
-      eventSource.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, [isAdmin, router]);

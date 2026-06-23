@@ -12,7 +12,7 @@ export default async function AdminRequestsPage({
   const [requests, availableMotors] = await Promise.all([
     prisma.outboundRequest.findMany({
       include: { requester: true, assignedMotor: true },
-      orderBy: [{ status: "asc" }, { createdAt: "desc" }]
+      orderBy: { createdAt: "desc" }
     }),
     prisma.motor.findMany({
       where: { status: "in_stock" },
@@ -33,7 +33,12 @@ export default async function AdminRequestsPage({
       {params.error ? <div className="result-panel error"><h2>无法批准</h2><p>所选电机可能已经出库、型号不匹配或不存在。</p></div> : null}
 
       <section className="request-list">
-        {requests.map((request) => {
+        {[...requests].sort((a, b) => {
+          // pending 状态优先显示
+          if (a.status === "pending" && b.status !== "pending") return -1;
+          if (a.status !== "pending" && b.status === "pending") return 1;
+          return 0;
+        }).map((request) => {
           const candidates = availableMotors.filter((motor) => motor.model === request.model);
           return (
             <article className="request-card admin-request-card" key={request.id}>

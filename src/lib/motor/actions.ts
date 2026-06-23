@@ -13,7 +13,9 @@ import {
   applyInbound,
   applyOutbound,
   executeMotorOutbound,
-  MotorFlowError
+  MotorFlowError,
+  type TransactionDraft,
+  type MotorSnapshot
 } from "./flow";
 import { buildMotorCode, motorCodeRange } from "./code";
 import { findMotorByCode, findMotorByCodeWithPhoto } from "./lookup";
@@ -390,7 +392,13 @@ export async function batchInboundMotorAction(formData: FormData) {
     );
   }
 
-  const succeeded: string[] = [];
+  // 先校验所有电机，收集合法的入库操作
+  const updates: {
+    motorId: number;
+    transaction: TransactionDraft;
+    motorSnapshot: MotorSnapshot;
+    motorCode: string;
+  }[] = [];
   const failed: { code: string; reason: string }[] = [];
 
   for (const code of codes) {
@@ -406,12 +414,12 @@ export async function batchInboundMotorAction(formData: FormData) {
         { operator: user.username, remark }
       );
 
-      await executeMotorOutbound(prisma, motor.id, next.transaction, next.motor, [
-        "/motors",
-        "/logs",
-        `/motors/${motor.id}`
-      ]);
-      succeeded.push(motor.motorCode);
+      updates.push({
+        motorId: motor.id,
+        transaction: next.transaction,
+        motorSnapshot: next.motor,
+        motorCode: motor.motorCode
+      });
     } catch (error) {
       const reason =
         error instanceof MotorFlowError
@@ -423,6 +431,30 @@ export async function batchInboundMotorAction(formData: FormData) {
     }
   }
 
+  // 使用事务批量执行
+  if (updates.length > 0) {
+    await prisma.$transaction(
+      updates.map((item) =>
+        prisma.motor.update({
+          where: { id: item.motorId },
+          data: {
+            status: item.motorSnapshot.status,
+            currentLocation: item.motorSnapshot.currentLocation,
+            transactions: { create: item.transaction }
+          }
+        })
+      )
+    );
+  }
+
+  // 统一刷新路径
+  revalidatePath("/motors");
+  revalidatePath("/logs");
+  for (const item of updates) {
+    revalidatePath(`/motors/${item.motorId}`);
+  }
+
+  const succeeded = updates.map((u) => u.motorCode);
   const successCount = succeeded.length;
   const failedCount = failed.length;
 
@@ -494,7 +526,13 @@ export async function batchOutboundMotorAction(formData: FormData) {
     );
   }
 
-  const succeeded: string[] = [];
+  // 先校验所有电机，收集合法的出库操作
+  const updates: {
+    motorId: number;
+    transaction: TransactionDraft;
+    motorSnapshot: MotorSnapshot;
+    motorCode: string;
+  }[] = [];
   const failed: { code: string; reason: string }[] = [];
 
   for (const code of codes) {
@@ -510,12 +548,12 @@ export async function batchOutboundMotorAction(formData: FormData) {
         { operator: user.username, issuedBy, vehicle, remark }
       );
 
-      await executeMotorOutbound(prisma, motor.id, next.transaction, next.motor, [
-        "/motors",
-        "/logs",
-        `/motors/${motor.id}`
-      ]);
-      succeeded.push(motor.motorCode);
+      updates.push({
+        motorId: motor.id,
+        transaction: next.transaction,
+        motorSnapshot: next.motor,
+        motorCode: motor.motorCode
+      });
     } catch (error) {
       const reason =
         error instanceof MotorFlowError
@@ -527,6 +565,30 @@ export async function batchOutboundMotorAction(formData: FormData) {
     }
   }
 
+  // 使用事务批量执行
+  if (updates.length > 0) {
+    await prisma.$transaction(
+      updates.map((item) =>
+        prisma.motor.update({
+          where: { id: item.motorId },
+          data: {
+            status: item.motorSnapshot.status,
+            currentLocation: item.motorSnapshot.currentLocation,
+            transactions: { create: item.transaction }
+          }
+        })
+      )
+    );
+  }
+
+  // 统一刷新路径
+  revalidatePath("/motors");
+  revalidatePath("/logs");
+  for (const item of updates) {
+    revalidatePath(`/motors/${item.motorId}`);
+  }
+
+  const succeeded = updates.map((u) => u.motorCode);
   const successCount = succeeded.length;
   const failedCount = failed.length;
 

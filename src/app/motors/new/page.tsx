@@ -8,7 +8,7 @@ export default async function NewMotorPage() {
       <div className="page-head">
         <div>
           <h1>新建电机</h1>
-          <p>系统会按型号数字自动生成八位编号，例如 GM6020 的第一台电机为 60200001。</p>
+          <p>系统会按型号自动生成编号（如 GM6020-0001）。</p>
         </div>
       </div>
       <form className="panel form" action={createMotorAction} encType="multipart/form-data">

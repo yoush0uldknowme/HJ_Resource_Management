@@ -50,14 +50,18 @@ CREATE TABLE IF NOT EXISTS "MotorTransaction" (
   "location" TEXT,
   "purpose" TEXT,
   "remark" TEXT,
+  "deleted" BOOLEAN NOT NULL DEFAULT false,
+  "deletedAt" DATETIME,
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "MotorTransaction_motorId_fkey" FOREIGN KEY ("motorId") REFERENCES "Motor" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT "MotorTransaction_motorId_fkey" FOREIGN KEY ("motorId") REFERENCES "Motor" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS "OutboundRequest" (
   "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   "requesterId" INTEGER NOT NULL,
   "model" TEXT NOT NULL,
+  "quantity" INTEGER NOT NULL DEFAULT 1,
+  "executedCount" INTEGER NOT NULL DEFAULT 0,
   "targetPerson" TEXT NOT NULL,
   "destination" TEXT NOT NULL,
   "remark" TEXT,

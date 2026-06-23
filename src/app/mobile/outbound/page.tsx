@@ -45,6 +45,12 @@ export default async function MobileOutboundPage({
     orderBy: { model: "asc" }
   });
 
+  // 查询所有在库电机，供用户选择具体电机
+  const availableMotors = await prisma.motor.findMany({
+    where: { status: "in_stock" },
+    orderBy: [{ model: "asc" }, { motorCode: "asc" }]
+  });
+
   return (
     <main className="mobile-shell">
       <div className="mobile-page-title">
@@ -85,11 +91,24 @@ export default async function MobileOutboundPage({
         </div>
 
         <div className="field">
-          <label htmlFor="targetPerson">③ 领用人</label>
+          <label htmlFor="motorId">③ 选择电机（选填）</label>
+          <select id="motorId" name="motorId" defaultValue="">
+            <option value="">不指定（让管理员分配）</option>
+            {availableMotors.map((motor) => (
+              <option value={motor.id} key={motor.id}>
+                {motor.motorCode} · {motor.model}
+              </option>
+            ))}
+          </select>
+          <small className="muted">可选具体电机，或留空由管理员分配</small>
+        </div>
+
+        <div className="field">
+          <label htmlFor="targetPerson">④ 领用人</label>
           <input id="targetPerson" name="targetPerson" required placeholder="请输入姓名" />
         </div>
         <div className="field">
-          <label htmlFor="destination">④ 车辆 / 去向</label>
+          <label htmlFor="destination">⑤ 车辆 / 去向</label>
           <input id="destination" name="destination" required placeholder="例如：英雄车" />
         </div>
         <div className="field">

@@ -375,6 +375,10 @@ export function ContinuousScanner({
           from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
+        #continuous-qr-reader video {
+          object-fit: cover;
+          transform: scaleX(-1);
+        }
       `}</style>
     </div>
   );

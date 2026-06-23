@@ -8,6 +8,7 @@ import { transactionLabel } from "@/lib/motor/status";
 export default async function LogsPage() {
   await requireAdmin();
   const logs = await prisma.motorTransaction.findMany({
+    where: { deleted: false },
     include: { motor: true },
     orderBy: { createdAt: "desc" },
     take: 200
@@ -49,7 +50,11 @@ export default async function LogsPage() {
                 <td>{log.createdAt.toLocaleString("zh-CN")}</td>
                 <td>{transactionLabel(log.transactionType)}</td>
                 <td>
-                  <Link href={`/motors/${log.motorId}`}>{log.motor.motorCode}</Link>
+                  {log.motor ? (
+                    <Link href={`/motors/${log.motor.id}`}>{log.motor.motorCode}</Link>
+                  ) : (
+                    <span className="text-gray-400">已删除</span>
+                  )}
                 </td>
                 <td>{log.operator}</td>
                 <td>{log.targetPerson ?? "-"}</td>
@@ -58,7 +63,7 @@ export default async function LogsPage() {
                 <td>
                   <form action={deleteLogAction}>
                     <input name="id" type="hidden" value={log.id} />
-                    <ConfirmSubmitButton message={`确定删除 ${log.motor.motorCode} 的这条日志吗？`}>
+                    <ConfirmSubmitButton message={`确定删除 ${log.motor ? log.motor.motorCode : "已删除"} 的这条日志吗？`}>
                       删除
                     </ConfirmSubmitButton>
                   </form>

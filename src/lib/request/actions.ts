@@ -47,6 +47,14 @@ export async function createOutboundRequestAction(formData: FormData) {
     }
   }
 
+  // 校验库存是否足够
+  const inStockCount = await prisma.motor.count({
+    where: { model: data.model, status: "in_stock" }
+  });
+  if (data.quantity > inStockCount) {
+    redirect(`${returnPath}?error=insufficient_stock&available=${inStockCount}`);
+  }
+
   const created = await prisma.outboundRequest.create({
     data: {
       requesterId: user.id,
@@ -211,33 +219,40 @@ export async function approveOutboundRequestAction(formData: FormData) {
     : null;
   const reviewRemark = String(formData.get("reviewRemark") ?? "").trim();
 
+  // 先获取申请，检查是否有效
+  const request = await prisma.outboundRequest.findUnique({ where: { id: requestId } });
+  if (!request || request.status !== "pending") {
+    redirect("/admin/requests?error=request_not_pending");
+  }
+
+  // 如果用户没有预选电机，管理员必须指定
+  if (!motorId && !request.assignedMotorId) {
+    redirect("/admin/requests?error=motor_required");
+  }
+
+  // 如果管理员指定了电机，验证电机存在且在库
+  if (motorId) {
+    const motor = await prisma.motor.findUnique({ where: { id: motorId } });
+    if (!motor || motor.status !== "in_stock") {
+      redirect("/admin/requests?error=invalid_motor");
+    }
+  }
+
   try {
     await prisma.$transaction(async (tx) => {
-      const request = await tx.outboundRequest.findUnique({ where: { id: requestId } });
-      if (!request || request.status !== "pending") {
-        throw new Error("REQUEST_NOT_PENDING");
-      }
-
       let assignedMotorId: number | null = null;
 
       if (motorId) {
-        // 管理员指定了电机：验证
-        const motor = await tx.motor.findUnique({ where: { id: motorId } });
-        if (!motor || motor.model !== request.model || motor.status !== "in_stock") {
-          throw new Error("MOTOR_NOT_AVAILABLE");
-        }
-        assignedMotorId = motor.id;
+        // 管理员指定了电机：已验证，直接使用
+        assignedMotorId = motorId;
       } else if (request.assignedMotorId) {
         // 用户预选了电机：验证仍有效
         const motor = await tx.motor.findUnique({ where: { id: request.assignedMotorId } });
         if (!motor || motor.model !== request.model || motor.status !== "in_stock") {
-          // 用户预选的已失效，但不阻止审批，改为不指定
-          assignedMotorId = null;
-        } else {
-          assignedMotorId = request.assignedMotorId;
+          throw new Error("MOTOR_NOT_AVAILABLE");
         }
+        assignedMotorId = request.assignedMotorId;
       }
-      // 如果都没有指定电机，assignedMotorId 保持 null，表示用户可拿任意同型号电机
 
       await tx.outboundRequest.update({
         where: { id: request.id },
@@ -350,6 +365,17 @@ export async function executeApprovedOutboundAction(formData: FormData) {
     );
   }
 
+  // 校验申请人身份
+  if (approvedRequest.requesterId !== user.id) {
+    redirect(
+      resultUrl(returnPath, {
+        type: "error",
+        title: "无法执行出库",
+        message: "该出库申请不属于您，无法执行出库。"
+      })
+    );
+  }
+
   // 执行实际出库
   let next;
   try {
@@ -375,8 +401,11 @@ export async function executeApprovedOutboundAction(formData: FormData) {
     throw error;
   }
 
-  // 事务：出库 + 标记申请为 completed
+  // 事务：出库 + 更新申请执行计数
   try {
+    const newExecutedCount = approvedRequest.executedCount + 1;
+    const isFullyCompleted = newExecutedCount >= approvedRequest.quantity;
+
     await prisma.$transaction([
       prisma.motor.update({
         where: { id: motor.id },
@@ -386,9 +415,13 @@ export async function executeApprovedOutboundAction(formData: FormData) {
           transactions: { create: next.transaction }
         }
       }),
-      prisma.outboundRequest.updateMany({
-        where: { id: approvedRequest.id, status: "approved" },
-        data: { status: "completed" }
+      prisma.outboundRequest.update({
+        where: { id: approvedRequest.id },
+        data: {
+          executedCount: newExecutedCount,
+          status: isFullyCompleted ? "completed" : "approved",
+          assignedMotorId: isFullyCompleted ? approvedRequest.assignedMotorId : null,
+        }
       })
     ]);
   } catch {
@@ -410,7 +443,7 @@ export async function executeApprovedOutboundAction(formData: FormData) {
     resultUrl(returnPath, {
       type: "success",
       title: "出库执行成功",
-      message: `${motor.motorCode} 已由 ${approvedRequest.targetPerson} 领用出库，车辆：${approvedRequest.destination}。`
+      message: `${motor.motorCode} 已由 ${approvedRequest.targetPerson} 领用出库（${approvedRequest.executedCount + 1}/${approvedRequest.quantity}），车辆：${approvedRequest.destination}。`
     })
   );
 }

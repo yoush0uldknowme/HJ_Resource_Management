@@ -44,6 +44,7 @@ model OutboundRequest {
   requester       User      @relation(fields: [requesterId], references: [id], onDelete: Cascade)
   model           String
   quantity        Int       @default(1)
+  executedCount   Int       @default(0)
   targetPerson    String
   destination     String
   remark          String?
@@ -69,13 +70,15 @@ model MotorPhoto {
 
 model MotorTransaction {
   id              Int      @id @default(autoincrement())
-  motorId         Int
-  motor           Motor    @relation(fields: [motorId], references: [id], onDelete: Cascade)
+  motorId         Int?
+  motor           Motor?   @relation(fields: [motorId], references: [id], onDelete: SetNull)
   transactionType String
   operator        String
   targetPerson    String?
   location        String?
   purpose         String?
   remark          String?
+  deleted         Boolean  @default(false)
+  deletedAt       DateTime?
   createdAt       DateTime @default(now())
 }
