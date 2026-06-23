@@ -845,7 +845,8 @@ tr:hover td { background: var(--color-bg-hover); }
 }
 
 /* --------------------------------------------------------------------------
-   14. CINEMATIC HOMEPAGE — Raycast Hero Style
+   14. CINEMATIC HOMEPAGE — Raycast Hero Style v2
+   核心元素：角落光晕 + 中心有机玻璃渐变blob + 鼠标光斑 + 跑马灯光效
    ========================================================================== */
 .cinematic-home {
   position: relative;
@@ -857,80 +858,205 @@ tr:hover td { background: var(--color-bg-hover); }
   cursor: default;
 }
 
-/* Mouse glow layer — much brighter */
+/* ===== 鼠标跟随光斑（增强版）===== */
 .hero-mouse-glow {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 3;
   pointer-events: none;
   background: radial-gradient(
-    800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(255, 99, 99, 0.18) 0%,
-    rgba(255, 99, 99, 0.08) 25%,
-    rgba(255, 99, 99, 0.02) 50%,
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 99, 99, 0.15) 0%,
+    rgba(255, 120, 100, 0.08) 20%,
+    rgba(100, 200, 255, 0.04) 40%,
     transparent 70%
   );
-  transition: opacity 0.6s ease;
+  transition: opacity 0.5s ease;
+  mix-blend-mode: screen;
 }
 
-/* === HERO ANIMATED PANELS === */
-
-/* Panel A — large red glow, bottom-left, slow drift */
+/* ===== 角落光晕 — 左下角（红色主调）===== */
 .cinematic-home::before {
   content: "";
   position: absolute;
-  bottom: -15%;
-  left: -5%;
-  width: 55%;
-  height: 65%;
-  background: radial-gradient(ellipse at 40% 80%, rgba(255, 99, 99, 0.22) 0%, rgba(255, 99, 99, 0.06) 35%, transparent 70%);
+  bottom: -12%;
+  left: -8%;
+  width: 58%;
+  height: 60%;
+  background:
+    radial-gradient(ellipse at 35% 75%, rgba(255, 60, 90, 0.28) 0%, rgba(255, 60, 90, 0.08) 40%, transparent 70%);
   border-radius: 50%;
-  filter: blur(50px);
-  animation: panel-rise-a 7s ease-in-out infinite;
+  filter: blur(60px);
+  animation: corner-glow-left 8s ease-in-out infinite;
   z-index: 0;
 }
 
-/* Panel B — medium red glow, top-right */
+/* ===== 角落光晕 — 右下角（青蓝色调）===== */
 .cinematic-home::after {
   content: "";
   position: absolute;
-  top: -10%;
-  right: -8%;
-  width: 50%;
+  bottom: -10%;
+  right: -10%;
+  width: 52%;
   height: 55%;
-  background: radial-gradient(ellipse at 60% 30%, rgba(255, 99, 99, 0.16) 0%, rgba(255, 99, 99, 0.04) 35%, transparent 70%);
+  background:
+    radial-gradient(ellipse at 65% 75%, rgba(60, 180, 220, 0.20) 0%, rgba(100, 140, 255, 0.06) 40%, transparent 70%);
   border-radius: 50%;
-  filter: blur(70px);
-  animation: panel-rise-b 9s ease-in-out infinite;
-  animation-delay: 1.5s;
+  filter: blur(55px);
+  animation: corner-glow-right 10s ease-in-out infinite;
+  animation-delay: 2s;
   z-index: 0;
 }
 
-/* Panel C — subtle warm glow center */
+/* Panel C 升级为中心玻璃有机形状 */
 .cinematic-panel-c {
   position: absolute;
-  top: 30%;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 60%;
-  height: 40%;
-  background: radial-gradient(ellipse at center, rgba(255, 99, 99, 0.08) 0%, transparent 70%);
-  border-radius: 50%;
-  filter: blur(90px);
-  animation: panel-rise-c 11s ease-in-out infinite;
-  z-index: 0;
+  width: 72%;
+  height: 62%;
+  z-index: 1;
   pointer-events: none;
+  overflow: visible;
 }
 
-/* Background dot grid */
+/* 有机 blob 形状 — 多色斜向渐变 + 玻璃质感 */
+.glass-blob {
+  position: absolute;
+  inset: 0;
+  border-radius: 40% 60% 55% 45% / 55% 45% 60% 40%;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 60, 90, 0.35) 0%,
+      rgba(255, 100, 80, 0.25) 20%,
+      rgba(255, 150, 100, 0.18) 35%,
+      rgba(80, 200, 230, 0.22) 55%,
+      rgba(100, 160, 255, 0.18) 70%,
+      rgba(140, 100, 255, 0.12) 85%,
+      rgba(255, 80, 120, 0.20) 100%
+    );
+  filter: blur(0px);
+  animation:
+    blob-morph 12s ease-in-out infinite,
+    blob-float 14s ease-in-out infinite;
+  box-shadow:
+    0 0 80px rgba(255, 60, 90, 0.15),
+    0 0 120px rgba(80, 200, 230, 0.10),
+    inset 0 0 60px rgba(255, 255, 255, 0.03);
+}
+
+/* 玻璃高光层 */
+.glass-blob::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      125deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.04) 25%,
+      transparent 50%,
+      rgba(255, 255, 255, 0.02) 75%,
+      rgba(255, 255, 255, 0.08) 100%
+    );
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  mix-blend-mode: overlay;
+}
+
+/* 内部光泽条纹 — 跑马灯/光线扫过效果 */
+.glass-blob::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 15%,
+      rgba(255, 255, 255, 0.18) 22%,
+      rgba(255, 200, 220, 0.15) 28%,
+      transparent 38%,
+      transparent 65%,
+      rgba(255, 255, 255, 0.05) 78%,
+      rgba(180, 220, 255, 0.10) 85%,
+      transparent 95%
+    );
+  background-size: 300% 100%;
+  animation: marquee-sweep 6s linear infinite;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 70%);
+}
+
+/* 背景点阵 */
 .cinematic-grid {
   position: absolute;
   inset: 0;
   z-index: 0;
-  opacity: 0.25;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  opacity: 0.2;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse at center, #000 0%, transparent 70%);
+}
+
+/* 全局跑马灯光线 */
+.marquee-lights {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.marquee-lights::before {
+  content: "";
+  position: absolute;
+  top: -5%;
+  left: -20%;
+  width: 140%;
+  height: 8px;
+  transform: rotate(-18deg);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 100, 130, 0.04) 15%,
+    rgba(255, 150, 150, 0.10) 30%,
+    rgba(255, 200, 180, 0.16) 42%,
+    rgba(255, 255, 220, 0.12) 50%,
+    rgba(180, 220, 255, 0.14) 60%,
+    rgba(120, 180, 255, 0.08) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: light-streak-1 7s ease-in-out infinite;
+  filter: blur(1px);
+}
+
+.marquee-lights::after {
+  content: "";
+  position: absolute;
+  top: 25%;
+  left: -20%;
+  width: 140%;
+  height: 4px;
+  transform: rotate(-22deg);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(100, 200, 255, 0.03) 20%,
+    rgba(150, 200, 255, 0.09) 40%,
+    rgba(255, 180, 200, 0.11) 55%,
+    rgba(255, 120, 150, 0.05) 70%,
+    transparent 100%
+  );
+  background-size: 250% 100%;
+  animation: light-streak-2 9s ease-in-out infinite;
+  animation-delay: 3s;
+  filter: blur(0.5px);
 }
 
 /* Hidden old elements */
@@ -1759,6 +1885,68 @@ tr:hover td { background: var(--color-bg-hover); }
 /* --------------------------------------------------------------------------
    20. Keyframe Animations
    -------------------------------------------------------------------------- */
+
+/* 角落光晕动画 — 左下角 */
+@keyframes corner-glow-left {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  33%      { transform: translate(20px, -25px) scale(1.12); opacity: 1; }
+  66%      { transform: translate(-15px, 15px) scale(1.06); opacity: 0.8; }
+}
+
+/* 角落光晕动画 — 右下角 */
+@keyframes corner-glow-right {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  40%      { transform: translate(-20px, -18px) scale(1.15); opacity: 0.9; }
+  75%      { transform: translate(12px, 10px) scale(1.05); opacity: 0.65; }
+}
+
+/* 有机 blob 形变 */
+@keyframes blob-morph {
+  0%, 100% {
+    border-radius: 40% 60% 55% 45% / 55% 45% 60% 40%;
+  }
+  25% {
+    border-radius: 55% 45% 40% 60% / 45% 60% 55% 45%;
+  }
+  50% {
+    border-radius: 45% 55% 60% 40% / 60% 40% 55% 45%;
+  }
+  75% {
+    border-radius: 60% 40% 45% 55% / 40% 55% 45% 60%;
+  }
+}
+
+/* 有机 blob 漂浮 */
+@keyframes blob-float {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  33%      { transform: translate(-48%, -52%) rotate(2deg) scale(1.04); }
+  66%      { transform: translate(-52%, -48%) rotate(-1.5deg) scale(0.97); }
+}
+
+/* 跑马灯扫光效果 — 主光线 */
+@keyframes marquee-sweep {
+  0%   { background-position: 200% center; }
+  100% { background-position: -100% center; }
+}
+
+/* 跑马灯光线 streak 1 */
+@keyframes light-streak-1 {
+  0%, 100% { opacity: 0; transform: rotate(-18deg) translateX(-30%); }
+  15%      { opacity: 1; }
+  50%      { opacity: 0.8; transform: rotate(-18deg) translateX(10%); }
+  85%      { opacity: 0.6; }
+  100%     { opacity: 0; transform: rotate(-18deg) translateX(40%); }
+}
+
+/* 跑马灯光线 streak 2 */
+@keyframes light-streak-2 {
+  0%, 100% { opacity: 0; transform: rotate(-22deg) translateX(-40%); }
+  20%      { opacity: 0.5; }
+  55%      { opacity: 0.9; transform: rotate(-22deg) translateX(5%); }
+  80%      { opacity: 0.4; }
+  100%     { opacity: 0; transform: rotate(-22deg) translateX(35%); }
+}
+
 @keyframes panel-rise-a {
   0%, 100% { transform: translateY(30px) translateX(0) scale(1); opacity: 0.5; }
   33%      { transform: translateY(-20px) translateX(15px) scale(1.15); opacity: 1; }

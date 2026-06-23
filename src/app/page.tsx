@@ -2,6 +2,8 @@ import Link from "next/link";
 import { isAdmin, getCurrentUser } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { HeroMouseGlow } from "@/components/hero-mouse-glow";
+import { GlassBlob } from "@/components/glass-blob";
+import { MarqueeLights } from "@/components/marquee-lights";
 import { AnimatedCounter } from "@/components/animated-counter";
 
 export default async function HomePage() {
@@ -18,16 +20,25 @@ export default async function HomePage() {
 
   return (
     <div className="cinematic-home">
-      {/* 鼠标跟随光斑 */}
-      <HeroMouseGlow />
+      {/* === 背景层 z-index: 0-1 === */}
 
       {/* 背景点阵 */}
       <div className="cinematic-grid" aria-hidden="true" />
 
-      {/* 第三块光面板 */}
-      <div className="cinematic-panel-c" aria-hidden="true" />
+      {/* 角落光晕 — 左下（红）+ 右下（青）由 CSS ::before / ::after 实现 */}
 
-      {/* 主体 */}
+      {/* 中心玻璃有机形状容器 */}
+      <div className="cinematic-panel-c" aria-hidden="true">
+        <GlassBlob />
+      </div>
+
+      {/* 跑马灯光线 */}
+      <MarqueeLights />
+
+      {/* 鼠标跟随光斑 */}
+      <HeroMouseGlow />
+
+      {/* === 前景内容层 z-index: 2+ === */}
       <section className="cinematic-stage">
         <div className="cinematic-status">
           <span>系统在线</span>
