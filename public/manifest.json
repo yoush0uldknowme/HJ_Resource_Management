@@ -1,0 +1,42 @@
+{
+  "name": "HJ 资源管理系统",
+  "short_name": "HJ资源管理",
+  "description": "电机资源管理系统 - 建档、入库、出库、扫码、审批",
+  "start_url": "/login",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef3f6",
+  "theme_color": "#0f766e",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "扫码查询",
+      "url": "/mobile/scan",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "入库",
+      "url": "/mobile/inbound",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "出库申请",
+      "url": "/mobile/outbound",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

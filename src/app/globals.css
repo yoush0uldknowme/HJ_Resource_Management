@@ -1641,7 +1641,7 @@ th {
   margin: 0 auto;
   display: grid;
   gap: 18px;
-  padding: 16px 14px 32px;
+  padding: 16px 14px 80px;
   min-height: 100vh;
 }
 
@@ -2329,4 +2329,62 @@ th {
     border: 1px solid #000;
     page-break-inside: avoid;
   }
+}
+
+/* ─── 手机端底部导航栏 ─── */
+.mobile-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 520px;
+  margin: 0 auto;
+  background: rgba(6, 14, 18, 0.92);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(78, 228, 208, 0.18);
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+  padding: 6px 4px;
+  padding-bottom: env(safe-area-inset-bottom, 6px);
+}
+
+.mobile-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(231, 243, 240, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  min-width: 52px;
+  transition: color 0.2s, background 0.2s;
+  font-family: inherit;
+}
+
+.mobile-tabbar-item:active {
+  background: rgba(78, 228, 208, 0.1);
+}
+
+.mobile-tabbar-item.active {
+  color: var(--tech);
+  background: rgba(78, 228, 208, 0.08);
+}
+
+.mobile-tabbar-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mobile-tabbar-label {
+  font-size: 10px;
+  line-height: 1.2;
 }

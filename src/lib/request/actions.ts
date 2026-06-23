@@ -9,6 +9,7 @@ import { applyOutbound, executeMotorOutbound, MotorFlowError } from "@/lib/motor
 import { findMotorByCode } from "@/lib/motor/lookup";
 import { normalizeScannedCode } from "@/lib/utils";
 import { resultUrl } from "@/lib/result";
+import { emitNewRequest } from "@/lib/events";
 
 // ── Schema ──
 
@@ -46,7 +47,7 @@ export async function createOutboundRequestAction(formData: FormData) {
     }
   }
 
-  await prisma.outboundRequest.create({
+  const created = await prisma.outboundRequest.create({
     data: {
       requesterId: user.id,
       model: data.model,
@@ -56,6 +57,15 @@ export async function createOutboundRequestAction(formData: FormData) {
       remark: data.remark,
       ...(data.motorId ? { assignedMotorId: data.motorId } : {})
     }
+  });
+
+  // 触发 SSE 通知，推送给管理员
+  emitNewRequest({
+    type: "new_request",
+    requestId: created.id,
+    model: data.model,
+    quantity: data.quantity,
+    requester: user.username
   });
 
   revalidatePath("/admin");
@@ -161,6 +171,17 @@ export async function batchCreateOutboundRequestAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/requests");
   revalidatePath("/user");
+
+  // 触发 SSE 通知（每条成功申请都通知）
+  for (const item of succeeded) {
+    emitNewRequest({
+      type: "new_request",
+      requestId: 0,
+      model: item,
+      quantity: 1,
+      requester: user.username
+    });
+  }
 
   const successCount = succeeded.length;
   const failedCount = failed.length;

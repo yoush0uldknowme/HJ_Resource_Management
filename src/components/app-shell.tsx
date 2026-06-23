@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/lib/auth/actions";
+import { AdminNotifier } from "@/components/admin-notifier";
+import { MobileTabBar } from "@/components/mobile-tabbar";
 
 export function AppShell({
   isAdmin: canManage,
@@ -15,7 +17,16 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/mobile")) return children;
+
+  // 手机端：只渲染底部导航栏 + 内容，不渲染顶部导航
+  if (pathname.startsWith("/mobile")) {
+    return (
+      <>
+        {children}
+        <MobileTabBar isAdmin={canManage} />
+      </>
+    );
+  }
 
   const links = useMemo(
     () => [
@@ -35,6 +46,7 @@ export function AppShell({
 
   return (
     <div className="app-shell">
+      <AdminNotifier isAdmin={canManage} />
       <header className="topbar">
         <Link className="brand" href={canManage ? "/admin" : "/user"}>
           <span className="brand-mark">HJ</span>
