@@ -8,7 +8,7 @@ async function main() {
     orderBy: [{ model: "asc" }, { createdAt: "asc" }, { id: "asc" }]
   });
   const sequences = new Map<string, number>();
-  const updates = motors.map((motor) => {
+  const updates = motors.map((motor: any) => {
     const prefix = motorModelPrefix(motor.model);
     const sequence = (sequences.get(prefix) ?? 0) + 1;
     sequences.set(prefix, sequence);
