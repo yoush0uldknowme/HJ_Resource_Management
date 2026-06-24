@@ -854,14 +854,12 @@ tr:hover td { background: var(--color-bg-hover); }
   background: var(--color-bg-base);
 }
 
-/* 防止全屏突破时出现横向滚动条 */
+/* 防止横向滚动 */
 html { overflow-x: hidden; }
 
-/* 登录后 .home-page 在 AppShell 内部时，突破容器限制 + 阻止滚动 */
-.app-shell > .content > .home-page {
-  margin: calc(-1 * var(--topbar-height)) -50vw 0 -50vw;
-  padding: 0 50vw;
-  width: 100vw;
+/* 首页锁定为一屏高，禁止滚动（登录前后通用） */
+.home-hero {
+  height: 100vh;
   max-height: 100vh;
   overflow: hidden;
 }
@@ -870,7 +868,6 @@ html { overflow-x: hidden; }
 .home-hero {
   position: relative;
   width: 100vw;
-  height: 100vh;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -942,15 +939,15 @@ html { overflow-x: hidden; }
 }
 
 /* ═══════════════════════════════════════════
-   GLASS SLATS — v6 核心视觉层
+   GLASS SLATS — v8 核心视觉层
    ═══════════════════════════════════════════ */
 
-/* 容器：全屏 + 色相旋转 */
+/* 容器：fixed 定位 = 永远相对视口，无视所有父容器 */
 .home-slats-container {
-  position: absolute;
-  inset: -120% -120%;
-  width: 340%;
-  height: 340%;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -959,16 +956,16 @@ html { overflow-x: hidden; }
   overflow: hidden;
 }
 
-/* 长条包裹器：倾斜 + 居中 */
+/* 长条包裹器：倾斜 + 铺满视口 */
 .glass-slats-wrap {
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
   gap: 2px;
-  width: 340%;
-  height: 160%;
-  margin-left: -120%;
-  margin-top: -30%;
+  width: calc(100vh * 2.4);
+  height: 180%;
+  margin-left: -70%;
+  margin-top: -40%;
   transform: rotate(-32deg);
   pointer-events: none;
   position: relative;
