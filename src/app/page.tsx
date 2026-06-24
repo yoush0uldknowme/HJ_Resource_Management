@@ -3,7 +3,6 @@ import { isAdmin, getCurrentUser } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { HeroMouseGlow } from "@/components/hero-mouse-glow";
 import { GlassSlats } from "@/components/glass-blob";
-import { MarqueeLights } from "@/components/marquee-lights";
 import { AnimatedCounter } from "@/components/animated-counter";
 
 export default async function HomePage() {
@@ -19,72 +18,80 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="cinematic-home">
-      {/* === 背景层 z-index: 0-1 === */}
+    <div className="home-page">
 
-      {/* 背景点阵 */}
-      <div className="cinematic-grid" aria-hidden="true" />
+      {/* ============= HERO ============= */}
+      <section className="home-hero">
+        {/* bg: dot grid */}
+        <div className="home-grid" aria-hidden="true" />
 
-      {/* 角落光晕 — 左下（红）+ 右下（青）由 CSS ::before / ::after 实现 */}
+        {/* bg: corner glows */}
+        <div className="home-glow-bl" aria-hidden="true" />
+        <div className="home-glow-br" aria-hidden="true" />
 
-      {/* 中心玻璃有机形状容器 */}
-      <div className="cinematic-panel-c" aria-hidden="true">
-        <GlassSlats />
-      </div>
-
-      {/* 跑马灯光线 */}
-      <MarqueeLights />
-
-      {/* 鼠标跟随光斑 */}
-      <HeroMouseGlow />
-
-      {/* === 前景内容层 z-index: 2+ === */}
-      <section className="cinematic-stage">
-        <div className="cinematic-status">
-          <span>系统在线</span>
-          <span>资源同步完成</span>
+        {/* bg: glass slats */}
+        <div className="home-slats-container" aria-hidden="true">
+          <GlassSlats />
         </div>
 
-        <div className="cinematic-title-block">
-          <span className="cinematic-kicker">HJ RESOURCE ORBIT</span>
-          <h1>电机资源管理系统</h1>
-          <p>面向仓库、实验室和现场领用的电机资源中枢。</p>
-          <strong>
-            <AnimatedCounter value={total} />
-          </strong>
-          <small>TOTAL MOTORS</small>
-        </div>
+        {/* mouse glow */}
+        <HeroMouseGlow />
 
-        <div className="cinematic-actions">
-          <Link href={primaryHref}>
-            {user ? "进入工作台" : "登录系统"}
-          </Link>
-          <Link href="/admin">管理端</Link>
-          <Link href="/user">用户端</Link>
-          <Link href="/mobile">手机端</Link>
-        </div>
-
-        <div className="cinematic-metrics" aria-label="资源概览">
-          <div>
-            <span>在库</span>
-            <strong>
-              <AnimatedCounter value={inStock} duration={1500} />
-            </strong>
+        {/* content */}
+        <div className="home-hero-inner">
+          <div className="home-badge" role="status">
+            <span className="home-badge-dot" />
+            v2.0 · 全新工作台上线
           </div>
-          <div>
-            <span>已出库</span>
-            <strong>
-              <AnimatedCounter value={checkedOut} duration={1500} />
-            </strong>
+
+          <h1 className="home-headline">
+            掌控每一台<br />
+            <span className="home-headline-accent">电机资源</span>
+          </h1>
+
+          <p className="home-subline">
+            面向仓库、实验室与现场的专业电机资源管理中枢。<br />
+            快速入库、精准追踪、一键出库，效率提升 10 倍。
+          </p>
+
+          <div className="home-actions">
+            <Link href={primaryHref} className="home-btn-cta">
+              {user ? "进入工作台" : "立即使用"}
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+            <Link href="/mobile" className="home-btn-ghost">
+              手机端扫码
+              <kbd>⌘ K</kbd>
+            </Link>
           </div>
-          <div>
-            <span>待处理</span>
-            <strong>
-              <AnimatedCounter value={pending} duration={1500} />
-            </strong>
+
+          {/* stat chips */}
+          <div className="home-stats">
+            <div className="home-stat">
+              <strong><AnimatedCounter value={total} /></strong>
+              <span>总台数</span>
+            </div>
+            <div className="home-stat-divider" />
+            <div className="home-stat">
+              <strong><AnimatedCounter value={inStock} duration={1500} /></strong>
+              <span>在库</span>
+            </div>
+            <div className="home-stat-divider" />
+            <div className="home-stat">
+              <strong><AnimatedCounter value={checkedOut} duration={1500} /></strong>
+              <span>已出库</span>
+            </div>
+            <div className="home-stat-divider" />
+            <div className="home-stat">
+              <strong><AnimatedCounter value={pending} duration={1500} /></strong>
+              <span>待处理</span>
+            </div>
           </div>
         </div>
       </section>
+
     </div>
   );
 }
