@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { isAdmin, getCurrentUser } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
-import { HeroMouseGlow } from "@/components/hero-mouse-glow";
-import { GlassSlats } from "@/components/glass-blob";
+import { HeroAnimation } from "@/components/hero-animation";
 import { AnimatedCounter } from "@/components/animated-counter";
 
 export default async function HomePage() {
@@ -22,23 +21,11 @@ export default async function HomePage() {
 
       {/* ============= HERO ============= */}
       <section className="home-hero">
-        {/* bg: dot grid */}
-        <div className="home-grid" aria-hidden="true" />
-
-        {/* bg: corner glows */}
-        <div className="home-glow-bl" aria-hidden="true" />
-        <div className="home-glow-br" aria-hidden="true" />
-
-      {/* bg: glass slats */}
-        <div className="home-slats-container" aria-hidden="true">
-          <GlassSlats />
-        </div>
+        {/* 动画层：桌面端 Three.js / 移动端 CSS 降级 */}
+        <HeroAnimation />
 
         {/* 中心遮罩 — 黑雾 + 不规则洞 */}
         <div className="home-center-mask" aria-hidden="true" />
-
-        {/* mouse glow */}
-        <HeroMouseGlow />
 
         {/* content */}
         <div className="home-hero-inner">
