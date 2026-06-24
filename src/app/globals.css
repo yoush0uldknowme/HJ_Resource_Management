@@ -852,8 +852,10 @@ tr:hover td { background: var(--color-bg-hover); }
 .home-page {
   position: relative;
   background: var(--color-bg-base);
-  overflow: hidden;
 }
+
+/* 防止全屏突破时出现横向滚动条 */
+html { overflow-x: hidden; }
 
 /* 登录后 .home-page 在 AppShell 内部时，突破容器限制 */
 .app-shell > .content > .home-page {
@@ -871,7 +873,6 @@ tr:hover td { background: var(--color-bg-hover); }
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   cursor: default;
   background: #07070c;
 }
