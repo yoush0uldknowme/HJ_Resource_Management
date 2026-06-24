@@ -112,23 +112,23 @@ export default async function OutboundPage({
           <input type="hidden" name="returnPath" value="/requests" />
           <input type="hidden" name="model" value={effectiveModel} />
 
-          <div style={{ marginBottom: "16px", padding: "10px 14px", background: "#e8f5f2", borderRadius: "8px", fontSize: "14px", fontWeight: 600, color: "var(--primary)" }}>
+          <div style={{ marginBottom: "16px", padding: "12px 16px", background: "rgba(34, 197, 94, 0.06)", borderRadius: "12px", fontSize: "14px", fontWeight: 600, color: "#16a34a", border: "1px solid rgba(34, 197, 94, 0.15)" }}>
             已选型号：{effectiveModel} — 共 {availableMotors.length} 台在库
-            <Link href="/motors/outbound" style={{ marginLeft: "12px", fontSize: "12px", textDecoration: "underline", fontWeight: 400 }}>重新选择</Link>
+            <Link href="/motors/outbound" style={{ marginLeft: "12px", fontSize: "13px", textDecoration: "underline", fontWeight: 400, color: "#6B6B6B" }}>重新选择</Link>
           </div>
 
           <div className="field">
             <label>② 选择具体电机（可选，不选则由管理员分配）</label>
-            <div style={{ maxHeight: "200px", overflowY: "auto", border: "1px solid var(--line)", borderRadius: "8px", padding: "8px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", marginBottom: "4px", borderRadius: "6px", background: "var(--panel)", cursor: "pointer", fontWeight: 500, border: "1px solid var(--line)" }}>
+            <div style={{ maxHeight: "200px", overflowY: "auto", border: "1px solid rgba(0,0,0,0.08)", borderRadius: "12px", padding: "8px", background: "#FAFAF8" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", marginBottom: "4px", borderRadius: "8px", background: "#fff", cursor: "pointer", fontWeight: 500, border: "1px solid rgba(0,0,0,0.08)" }}>
                 <input type="radio" name="motorId" value="" defaultChecked />由管理员分配（推荐）
               </label>
               {availableMotors.map((motor) => (
-                <label key={motor.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", marginBottom: "4px", borderRadius: "6px", background: "var(--panel)", cursor: "pointer", border: "1px solid var(--line)" }}>
+                <label key={motor.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 14px", marginBottom: "4px", borderRadius: "8px", background: "#fff", cursor: "pointer", border: "1px solid rgba(0,0,0,0.08)" }}>
                   <input type="radio" name="motorId" value={motor.id} />
                   <span style={{ flex: 1 }}>
                     <strong>{motor.motorCode}</strong> · {motor.name}
-                    {motor.currentLocation ? <small style={{ marginLeft: "8px", color: "var(--muted)" }}>位置：{motor.currentLocation}</small> : null}
+                    {motor.currentLocation ? <small style={{ marginLeft: "8px", color: "#A0A0A0" }}>位置：{motor.currentLocation}</small> : null}
                   </span>
                 </label>
               ))}

@@ -47,6 +47,7 @@ export function AppShell({
   return (
     <div className="app-shell">
       <AdminNotifier isAdmin={canManage} />
+      {/* MiMo 风格简洁导航 */}
       <header className="topbar">
         <Link className="brand" href={canManage ? "/admin" : "/user"}>
           <span className="brand-mark">HJ</span>
@@ -55,6 +56,7 @@ export function AppShell({
             <small>{canManage ? "管理端" : "用户端"}</small>
           </span>
         </Link>
+
         <nav className="nav" aria-label="主导航">
           {links.map((link) => (
             <Link
@@ -69,6 +71,7 @@ export function AppShell({
             </Link>
           ))}
         </nav>
+
         <div className="topbar-actions">
           <Link className="mobile-entry-pill" href="/mobile">
             手机端
@@ -80,6 +83,7 @@ export function AppShell({
           </form>
         </div>
       </header>
+
       <main className="content">{children}</main>
     </div>
   );

@@ -1,108 +1,29 @@
 "use client";
 
-/**
- * GlassSlats — Raycast 风格斜向毛玻璃长条阵列 v7
- *
- * v7 改动（按用户反馈）：
- * - 色系改为单色系（蓝紫 → 白），不再五颜六色
- * - 长条数量增至 35 根，铺满全屏
- * - 统一宽度 54px，紧密排列（gap 2px）
- * - 倾斜角度 -32°（更陡）
- * - 颜色过渡改用缓慢漂移（12s ease-in-out），不再生硬
- * - 背景改为明亮渐变，让毛玻璃 blur 有东西可模糊
- * - 新增中心高亮区，让遮罩下的内容更清晰
- */
-
 import React from "react";
 
-/* 确定性伪随机（避免 SSR 水合不匹配）*/
-function mulberry32(seed: number) {
-  return () => {
-    let t = (seed += 0x6d2b79f5) & 0xffffffff;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const rand = mulberry32(42);
-
-/* 单色系配色：蓝紫 → 白
- * 每条长条的主色相在 220~270 之间（蓝→紫），
- * 渐变末端向白色偏移（更高的 lightness + 更低的 saturation）
- * 整体做缓慢的色相漂移（220→270→220），过渡柔和
+/**
+ * HeroBackground v15.4 — 双半球强对比（弧形分界修复版）
+ *
+ * 几何原理：
+ *   - 深色圆：圆心在视口正上方远处 → 只露出底部一段弧 → 向下凸的曲线
+ *   - 红色圆：圆心在视口正下方远处 → 只露出顶部一段弧 → 向上凸的曲线
+ *   - 两段弧在视口中间相遇 → 形成自然的 S 形有机分界线
+ *
+ * 弯曲程度 ∝ 1 / 圆直径（圆越小，弧越弯）
  */
-const SLAT_COUNT = 35;
-const SLAT_WIDTH = 54;          // px，统一宽度
-const SLAT_GAP   = 2;          // px，紧密排列
-
-interface Slat {
-  hue: number;       // 主色相（220~270 蓝紫区间）
-  sat: number;       // 饱和度（60~80，较高）
-  light: number;     // 亮度（50~65）
-  alpha: number;     // 不透明度（0.40~0.62）
-  height: number;    // 高度百分比
-  driftOffset: number; // 色相漂移相位偏移
-  hueDur: number;    // 色相漂移周期（8~16s，每根不同）
-  hueDelay: number;  // 色相漂移延迟（0~8s，错开变化时机）
-  hueRange: number;  // 色相漂移范围（30~70deg）
-}
-
-function generateSlats(): Slat[] {
-  const slats: Slat[] = [];
-  for (let i = 0; i < SLAT_COUNT; i++) {
-    const baseHue = 220 + (i / SLAT_COUNT) * 50 + (rand() - 0.5) * 12;
-    slats.push({
-      hue:         Math.round(baseHue),
-      sat:         Math.round(68 + rand() * 16),
-      light:       Math.round(50 + rand() * 16),
-      alpha:       parseFloat((0.40 + rand() * 0.22).toFixed(2)),
-      height:      Math.round(90 + rand() * 40),
-      driftOffset: parseFloat((i * 0.28).toFixed(2)),
-      hueDur:      parseFloat((8 + rand() * 10).toFixed(1)),   // 8~18s
-      hueDelay:    parseFloat((rand() * 10).toFixed(1)),       // 0~10s 错开
-      hueRange:    Math.round(30 + rand() * 50),               // 30~80deg
-    });
-  }
-  return slats;
-}
-
-const SLATS = generateSlats();
 
 export function GlassSlats() {
   return (
-    <div className="glass-slats-wrap" aria-hidden="true">
+    <div className="hero-semicircle-stage" aria-hidden="true">
+      {/* 上方深色圆 — 圆心在视口上方 */}
+      <div className="semicircle semicircle--dark" />
 
-      {/* 明亮背景渐变 — 毛玻璃需要这个才能出效果 */}
-      <div className="slats-bg-gradient" />
+      {/* 下方红色圆 — 圆心在视口下方 */}
+      <div className="semicircle semicircle--red" />
 
-      {/* 动态光斑层 — 缓慢漂移的彩色光晕 */}
-      <div className="slats-light-pool pool-1" />
-      <div className="slats-light-pool pool-2" />
-      <div className="slats-light-pool pool-3" />
-
-      {SLATS.map((s, i) => (
-        <div
-          key={i}
-          className="glass-slat-item"
-          style={{
-            "--i":         i,
-            "--w":         `${SLAT_WIDTH}px`,
-            "--h":        `${s.height}%`,
-            "--hue":      s.hue,
-            "--sat":      `${s.sat}%`,
-            "--light":    `${s.light}%`,
-            "--alpha":    s.alpha,
-            "--drift":    s.driftOffset,
-            "--float-dur": `${4 + (i % 4) * 0.6}s`,
-            "--hue-dur":   `${s.hueDur}s`,
-            "--hue-delay": `${s.hueDelay}s`,
-            "--hue-range": `${s.hueRange}deg`,
-          } as React.CSSProperties}
-        >
-          {/* 高光扫过效果 */}
-          <span className="slat-shine" />
-        </div>
-      ))}
+      {/* 噪点纹理 */}
+      <div className="hero-noise" />
     </div>
   );
 }
