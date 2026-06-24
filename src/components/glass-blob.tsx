@@ -1,21 +1,15 @@
 "use client";
 
 /**
- * GlassSlats — Raycast 级斜向毛玻璃长条阵列 v5
+ * GlassSlats — Raycast 级斜向毛玻璃长条阵列 v6
  *
- * 核心特征：
- * - 25 根长条，宽度 28-80px，高度 180%
- * - 整体旋转 -22°
- * - 整组 filter: hue-rotate 动画（全局色偏移）
- * - 每根长条内嵌 3 个反光块，独立随机闪烁
- * - 铺满全屏（容器 200% x 200%）
- *
- * 修复 v4 问题：
- * - Math.random() 改为确定性伪随机（mulberry32 PRNG），SSR/CSR 一致
- * - 大幅提升 alpha 透明度，让长条真正可见
+ * 核心改动（v6 vs v5）：
+ * - 色相范围大幅扩展：粉(330) → 橙(20) → 青(185) → 蓝(230) → 紫(280)
+ * - alpha 大幅提升：0.50-0.70（之前 0.25-0.45）
+ * - 更宽的长条：44-88px（之前 32-72px）
+ * - 背后添加彩色渐变底图，让毛玻璃有东西可模糊
  */
 
-// ── 确定性伪随机（保证 SSR / CSR 一致）──────────────
 function mulberry32(seed: number) {
   return () => {
     let t = (seed += 0x6d2b79f5) & 0xffffffff;
@@ -24,73 +18,46 @@ function mulberry32(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-const rand = mulberry32(42); // 固定种子，两端一致
+const rand = mulberry32(42);
 
 interface Slat {
   w: number;
   h: number;
-  hue: number;
+  hue1: number;  // 主色相
+  hue2: number;  // 渐变末端色相（偏移量）
   sat: number;
   light: number;
   alpha: number;
   gap: number;
-  yOffset: number;
-  driftDur: number;
-  driftDelay: number;
-  sweepDelay: number;
-  blocks: Block[];
-}
-
-interface Block {
-  top: string;
-  left: string;
-  w: string;
-  h: string;
-  delay: number;
-  dur: number;
-}
-
-function makeBlocks(): Block[] {
-  const out: Block[] = [];
-  for (let i = 0; i < 3; i++) {
-    out.push({
-      top:   `${8 + rand() * 75}%`,
-      left:  `${5 + rand() * 30}%`,
-      w:    `${30 + rand() * 55}%`,
-      h:    `${6 + rand() * 18}%`,
-      delay: rand() * 4,
-      dur:   1.5 + rand() * 3,
-    });
-  }
-  return out;
 }
 
 const SLATS: Slat[] = [
-  { w: 38, h: 175, hue: 220, sat: 85, light: 65, alpha: 0.35, gap: 14, yOffset: -12, driftDur: 3.8, driftDelay: 0.0,  sweepDelay: 0.0,  blocks: makeBlocks() },
-  { w: 56, h: 165, hue: 235, sat: 80, light: 63, alpha: 0.40, gap: 18, yOffset: 5,   driftDur: 4.2, driftDelay: 0.3,  sweepDelay: 1.2,  blocks: makeBlocks() },
-  { w: 42, h: 185, hue: 250, sat: 78, light: 62, alpha: 0.32, gap: 12, yOffset: -8,  driftDur: 3.5, driftDelay: 0.7,  sweepDelay: 0.5,  blocks: makeBlocks() },
-  { w: 68, h: 170, hue: 265, sat: 75, light: 60, alpha: 0.45, gap: 20, yOffset: 3,   driftDur: 4.0, driftDelay: 0.1,  sweepDelay: 2.0,  blocks: makeBlocks() },
-  { w: 34, h: 160, hue: 205, sat: 88, light: 67, alpha: 0.28, gap: 10, yOffset: -15, driftDur: 3.2, driftDelay: 1.1,  sweepDelay: 0.8,  blocks: makeBlocks() },
-  { w: 60, h: 180, hue: 280, sat: 72, light: 61, alpha: 0.38, gap: 16, yOffset: 7,   driftDur: 4.5, driftDelay: 0.5,  sweepDelay: 1.5,  blocks: makeBlocks() },
-  { w: 46, h: 168, hue: 230, sat: 82, light: 64, alpha: 0.36, gap: 14, yOffset: -4,  driftDur: 3.7, driftDelay: 0.9,  sweepDelay: 0.3,  blocks: makeBlocks() },
-  { w: 72, h: 175, hue: 260, sat: 76, light: 62, alpha: 0.42, gap: 22, yOffset: -1,  driftDur: 4.1, driftDelay: 0.2,  sweepDelay: 1.0,  blocks: makeBlocks() },
-  { w: 36, h: 155, hue: 290, sat: 80, light: 63, alpha: 0.30, gap: 11, yOffset: 10,  driftDur: 3.4, driftDelay: 1.3,  sweepDelay: 0.6,  blocks: makeBlocks() },
-  { w: 54, h: 172, hue: 215, sat: 86, light: 66, alpha: 0.37, gap: 15, yOffset: -6,  driftDur: 4.3, driftDelay: 0.6,  sweepDelay: 2.5,  blocks: makeBlocks() },
-  { w: 62, h: 182, hue: 245, sat: 77, light: 61, alpha: 0.41, gap: 17, yOffset: 2,   driftDur: 3.9, driftDelay: 0.4,  sweepDelay: 1.8,  blocks: makeBlocks() },
-  { w: 40, h: 162, hue: 270, sat: 74, light: 60, alpha: 0.33, gap: 13, yOffset: -10, driftDur: 3.6, driftDelay: 1.0,  sweepDelay: 0.9,  blocks: makeBlocks() },
-  { w: 66, h: 178, hue: 225, sat: 81, light: 63, alpha: 0.39, gap: 19, yOffset: 6,   driftDur: 4.4, driftDelay: 0.8,  sweepDelay: 1.3,  blocks: makeBlocks() },
-  { w: 44, h: 158, hue: 255, sat: 79, light: 62, alpha: 0.34, gap: 12, yOffset: -3,  driftDur: 3.3, driftDelay: 0.2,  sweepDelay: 2.2,  blocks: makeBlocks() },
-  { w: 58, h: 174, hue: 285, sat: 73, light: 61, alpha: 0.38, gap: 16, yOffset: 8,   driftDur: 4.6, driftDelay: 1.2,  sweepDelay: 0.7,  blocks: makeBlocks() },
-  { w: 48, h: 169, hue: 210, sat: 87, light: 65, alpha: 0.35, gap: 14, yOffset: -7,  driftDur: 3.8, driftDelay: 0.5,  sweepDelay: 1.6,  blocks: makeBlocks() },
-  { w: 70, h: 184, hue: 240, sat: 75, light: 62, alpha: 0.44, gap: 21, yOffset: 1,   driftDur: 4.0, driftDelay: 0.0,  sweepDelay: 2.8,  blocks: makeBlocks() },
-  { w: 32, h: 152, hue: 275, sat: 82, light: 64, alpha: 0.25, gap: 9,  yOffset: 12,  driftDur: 3.1, driftDelay: 1.4,  sweepDelay: 0.4,  blocks: makeBlocks() },
-  { w: 52, h: 171, hue: 230, sat: 78, light: 63, alpha: 0.37, gap: 15, yOffset: -9,  driftDur: 4.2, driftDelay: 0.7,  sweepDelay: 1.9,  blocks: makeBlocks() },
-  { w: 64, h: 177, hue: 260, sat: 76, light: 61, alpha: 0.40, gap: 18, yOffset: 4,   driftDur: 3.7, driftDelay: 0.3,  sweepDelay: 1.1,  blocks: makeBlocks() },
-  { w: 42, h: 163, hue: 200, sat: 84, light: 66, alpha: 0.31, gap: 13, yOffset: -5,  driftDur: 3.5, driftDelay: 1.0,  sweepDelay: 0.7,  blocks: makeBlocks() },
-  { w: 56, h: 173, hue: 250, sat: 79, light: 62, alpha: 0.36, gap: 16, yOffset: 9,   driftDur: 4.3, driftDelay: 0.6,  sweepDelay: 2.1,  blocks: makeBlocks() },
-  { w: 46, h: 167, hue: 280, sat: 77, light: 61, alpha: 0.33, gap: 14, yOffset: -11, driftDur: 3.4, driftDelay: 0.9,  sweepDelay: 0.5,  blocks: makeBlocks() },
-  { w: 68, h: 179, hue: 220, sat: 80, light: 63, alpha: 0.43, gap: 20, yOffset: 0,   driftDur: 4.1, driftDelay: 0.1,  sweepDelay: 1.4,  blocks: makeBlocks() },
-  { w: 38, h: 161, hue: 265, sat: 75, light: 62, alpha: 0.29, gap: 12, yOffset: 7,   driftDur: 3.6, driftDelay: 1.1,  sweepDelay: 0.8,  blocks: makeBlocks() },
+  // 从左到右：跨越整个色谱，模拟 Raycast 彩色光带
+  { w: 48, h: 200, hue1: 330, hue2: 350, sat: 85, light: 62, alpha: 0.55, gap: 12 },  // 粉红
+  { w: 64, h: 190, hue1: 350, hue2: 15,  sat: 90, light: 58, alpha: 0.60, gap: 16 },  // 红→橙
+  { w: 52, h: 210, hue1: 15,  hue2: 35,  sat: 92, light: 55, alpha: 0.50, gap: 14 },  // 橙
+  { w: 76, h: 195, hue1: 30,  hue2: 50,  sat: 88, light: 54, alpha: 0.65, gap: 20 },  // 橙黄
+  { w: 44, h: 185, hue1: 45,  hue2: 65,  sat: 85, light: 58, alpha: 0.48, gap: 11 },  // 黄橙
+  { w: 68, h: 205, hue1: 160, hue2: 180, sat: 82, light: 55, alpha: 0.58, gap: 18 },  // 青
+  { w: 56, h: 192, hue1: 180, hue2: 200, sat: 86, light: 53, alpha: 0.62, gap: 15 },  // 青蓝
+  { w: 80, h: 198, hue1: 200, hue2: 220, sat: 84, light: 56, alpha: 0.68, gap: 22 },  // 蓝青
+  { w: 46, h: 188, hue1: 220, hue2: 240, sat: 80, light: 58, alpha: 0.52, gap: 13 },  // 蓝
+  { w: 72, h: 202, hue1: 240, hue2: 260, sat: 78, light: 57, alpha: 0.64, gap: 19 },  // 蓝紫
+  { w: 50, h: 195, hue1: 260, hue2: 280, sat: 76, light: 58, alpha: 0.55, gap: 14 },  // 紫
+  { w: 66, h: 208, hue1: 278, hue2: 300, sat: 78, light: 56, alpha: 0.60, gap: 17 },  // 紫→品
+  { w: 42, h: 186, hue1: 298, hue2: 325, sat: 84, light: 58, alpha: 0.48, gap: 11 },  // 品→粉
+  { w: 74, h: 200, hue1: 320, hue2: 345, sat: 86, light: 56, alpha: 0.65, gap: 20 },  // 粉
+  { w: 54, h: 194, hue1: 340, hue2: 10,  sat: 88, light: 57, alpha: 0.56, gap: 15 },  // 粉→红
+  { w: 60, h: 196, hue1: 10,  hue2: 30,  sat: 90, light: 55, alpha: 0.58, gap: 16 },  // 红→橙
+  { w: 82, h: 204, hue1: 170, hue2: 195, sat: 83, light: 54, alpha: 0.68, gap: 23 },  // 青绿
+  { w: 40, h: 182, hue1: 230, hue2: 255, sat: 80, light: 58, alpha: 0.46, gap: 10 },  // 蓝
+  { w: 64, h: 198, hue1: 250, hue2: 275, sat: 77, light: 57, alpha: 0.60, gap: 18 },  // 蓝紫
+  { w: 56, h: 192, hue1: 285, hue2: 310, sat: 82, light: 56, alpha: 0.54, gap: 15 },  // 品
+  { w: 70, h: 206, hue1: 25,  hue2: 50,  sat: 90, light: 54, alpha: 0.63, gap: 19 },  // 橙黄
+  { w: 48, h: 190, hue1: 190, hue2: 215, sat: 85, light: 55, alpha: 0.52, gap: 13 },  // 青
+  { w: 66, h: 199, hue1: 310, hue2: 335, sat: 86, light: 57, alpha: 0.58, gap: 17 },  // 粉
+  { w: 52, h: 193, hue1: 140, hue2: 165, sat: 80, light: 56, alpha: 0.50, gap: 14 },  // 青绿
+  { w: 78, h: 203, hue1: 210, hue2: 235, sat: 82, light: 57, alpha: 0.66, gap: 21 },  // 蓝
 ];
 
 import React from "react";
@@ -98,39 +65,28 @@ import React from "react";
 export function GlassSlats() {
   return (
     <div className="glass-slats-wrap" aria-hidden="true">
+      {/* 底部彩色渐变 — 给毛玻璃提供可模糊的内容 */}
+      <div className="slats-rainbow-bg" />
+
       {SLATS.map((s, i) => (
         <div
           key={i}
           className="glass-slat-item"
           style={{
-            "--w":          `${s.w}px`,
-            "--h":          `${s.h}%`,
-            "--hue1":       s.hue,
-            "--hue2":       s.hue + 30,
-            "--sat":         `${s.sat}%`,
-            "--light":      `${s.light}%`,
-            "--alpha":       s.alpha,
-            "--drift-dur":  `${s.driftDur}s`,
-            "--drift-delay": `${s.driftDelay}s`,
-            "--sweep-dur":  `7s`,
-            "--sweep-delay": `${s.sweepDelay}s`,
+            "--w":      `${s.w}px`,
+            "--h":      `${s.h}%`,
+            "--hue1":   s.hue1,
+            "--hue2":   s.hue2,
+            "--sat":    `${s.sat}%`,
+            "--light":  `${s.light}%`,
+            "--alpha":  s.alpha,
+            "--delay":  `${(i * 0.15) % 4}s`,
+            "--float-dur": `${3 + (i % 5) * 0.4}s`,
+            "--sweep-delay": `${(i * 0.4) % 7}s`,
           } as React.CSSProperties}
         >
-          {/* 随机反光块 */}
-          {s.blocks.map((b, j) => (
-            <div
-              key={j}
-              className="slat-spec-block"
-              style={{
-                top:          b.top,
-                left:         b.left,
-                width:        b.w,
-                height:       b.h,
-                animationDelay:    `${b.delay}s`,
-                animationDuration: `${b.dur}s`,
-              } as React.CSSProperties}
-            />
-          ))}
+          {/* 高光层 */}
+          <span className="slat-shine" />
         </div>
       ))}
     </div>

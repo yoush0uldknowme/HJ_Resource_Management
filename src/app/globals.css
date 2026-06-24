@@ -866,249 +866,291 @@ tr:hover td { background: var(--color-bg-hover); }
   overflow: hidden;
   padding-top: var(--topbar-height);
   cursor: default;
-  background: #080810;
+  background: #07070c;
 }
 
-/* dot grid */
+/* dot grid — 极其微弱的点阵 */
 .home-grid {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 0%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 0%, transparent 100%);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 0%, transparent 100%);
 }
 
-/* corner glow — left bottom (blue-violet) */
+/* ═════════════════════════════════════
+   角落光晕 v6 — 更鲜艳的粉/青色调
+   ═════════════════════════════════════ */
 .home-glow-bl {
   position: absolute;
-  bottom: -10%;
-  left: -8%;
-  width: 50%;
-  height: 55%;
+  bottom: -15%;
+  left: -10%;
+  width: 60%;
+  height: 65%;
   background: radial-gradient(ellipse at 30% 80%,
-    rgba(110, 142, 251, 0.18) 0%,
-    rgba(167, 139, 250, 0.08) 40%,
-    transparent 70%
-  );
-  border-radius: 50%;
-  filter: blur(60px);
-  z-index: 0;
-  animation: home-glow-a 7s ease-in-out infinite;
-}
-
-/* corner glow — right bottom (cyan) */
-.home-glow-br {
-  position: absolute;
-  bottom: -8%;
-  right: -6%;
-  width: 45%;
-  height: 50%;
-  background: radial-gradient(ellipse at 70% 80%,
-    rgba(56, 189, 248, 0.14) 0%,
-    rgba(110, 142, 251, 0.07) 40%,
+    rgba(236, 72, 153, 0.28) 0%,
+    rgba(168, 85, 247, 0.14) 35%,
     transparent 70%
   );
   border-radius: 50%;
   filter: blur(70px);
   z-index: 0;
-  animation: home-glow-b 9s ease-in-out infinite;
+  animation: glow-drift-a 8s ease-in-out infinite;
+}
+
+.home-glow-br {
+  position: absolute;
+  bottom: -12%;
+  right: -8%;
+  width: 55%;
+  height: 58%;
+  background: radial-gradient(ellipse at 70% 80%,
+    rgba(56, 189, 248, 0.25) 0%,
+    rgba(99, 102, 241, 0.12) 35%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  filter: blur(75px);
+  z-index: 0;
+  animation: glow-drift-b 10s ease-in-out infinite;
   animation-delay: 2s;
 }
 
-@keyframes home-glow-a {
-  0%, 100% { opacity: 0.6; transform: scale(1) translate(0, 0); }
-  50%       { opacity: 1;   transform: scale(1.1) translate(10px, -15px); }
+@keyframes glow-drift-a {
+  0%, 100% { opacity: 0.7; transform: scale(1) translate(0, 0); }
+  50%      { opacity: 1;   transform: scale(1.12) translate(15px, -20px); }
 }
-@keyframes home-glow-b {
-  0%, 100% { opacity: 0.5; transform: scale(1) translate(0, 0); }
-  50%       { opacity: 0.9; transform: scale(1.08) translate(-8px, -12px); }
+@keyframes glow-drift-b {
+  0%, 100% { opacity: 0.6; transform: scale(1) translate(0, 0); }
+  50%      { opacity: 0.95; transform: scale(1.1) translate(-12px, -18px); }
 }
 
-/* glass slats container — 全屏 + 全局色偏移动画 */
+/* ═══════════════════════════════════════════
+   GLASS SLATS — v6 核心视觉层
+   ═══════════════════════════════════════════ */
+
+/* 容器：全屏 + 色相旋转 */
 .home-slats-container {
   position: absolute;
-  inset: -50% -50%;
+  inset: -60% -40%;
   width: 200%;
-  height: 200%;
+  height: 220%;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
   pointer-events: none;
   overflow: hidden;
-  /* 整组色相漂移：0° → 360° 循环 */
-  animation: global-hue-spin 28s linear infinite;
-  will-change: filter;
+  animation: global-hue-spin 24s linear infinite;
 }
 
-/* ===== 鼠标跟随光斑 ===== */
-.hero-mouse-glow {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: radial-gradient(
-    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(110, 142, 251, 0.10) 0%,
-    rgba(56, 189, 248, 0.04) 40%,
-    transparent 65%
-  );
-  transition: background 0.1s;
-}
-
-/* ===== GLASS SLATS — 全屏铺满 v4 ===== */
+/* 长条包裹器：倾斜 + 居中 */
 .glass-slats-wrap {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: var(--gap, 16px);
-  width: 160%;
-  height: 200%;
-  margin-top: -30%;
+  gap: 14px;
+  width: 150%;
+  height: 100%;
+  margin-top: -8%;
   transform: rotate(-22deg);
   pointer-events: none;
-  will-change: transform;
 }
 
+/* ===== 底部彩虹渐变 — 给毛玻璃提供模糊内容 ===== */
+.slats-rainbow-bg {
+  position: absolute;
+  inset: -20% -30%;
+  background:
+    linear-gradient(115deg,
+      rgba(236, 72, 153, 0.5)   0%,
+      rgba(251, 146, 60, 0.45)  14%,
+      rgba(251, 191, 36, 0.35)  26%,
+      rgba(52, 211, 153, 0.4)   38%,
+      rgba(56, 189, 248, 0.5)   52%,
+      rgba(99, 102, 241, 0.48)  66%,
+      rgba(168, 85, 247, 0.42)  78%,
+      rgba(236, 72, 153, 0.5)   92%
+    );
+  filter: blur(40px);
+  border-radius: 40px;
+  transform: rotate(-3deg);
+  animation: rainbow-shift 18s ease-in-out infinite alternate;
+  z-index: -1;
+}
+
+@keyframes rainbow-shift {
+  0%   { filter: blur(40px) hue-rotate(0deg); }
+  100% { filter: blur(50px) hue-rotate(30deg); }
+}
+
+/* ===== 单根长条 — 毛玻璃质感 v6 ===== */
 .glass-slat-item {
   flex-shrink: 0;
-  width: var(--w, 96px);
-  height: var(--h, 100%);
-  border-radius: 28px;
+  width: var(--w, 64px);
+  height: var(--h, 180%);
+  border-radius: 32px;
   position: relative;
-  background: linear-gradient(
-    168deg,
-    hsla(var(--hue1, 230), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.13)) 0%,
-    hsla(var(--hue2, 260), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.09)) 100%
-  );
-  backdrop-filter: blur(12px) saturate(1.5);
-  -webkit-backdrop-filter: blur(12px) saturate(1.5);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    0 0 40px 6px hsla(var(--hue1, 230), var(--sat, 80%), var(--light, 62%), 0.04);
-  animation: slat-drift var(--drift-dur, 3.5s) ease-in-out infinite alternate;
-  animation-delay: var(--drift-delay, 0s);
   overflow: hidden;
-  opacity: 0.82;
+
+  /* 主渐变 — 高饱和度，高不透明度 */
+  background: linear-gradient(
+    165deg,
+    hsla(var(--hue1, 240), var(--sat, 85%), var(--light, 58%), var(--alpha, 0.55)) 0%,
+    hsla(var(--hue2, 260), calc(var(--sat, 85%) * 0.9), calc(var(--light, 58%) * 0.95), calc(var(--alpha, 0.55) * 0.75)) 100%
+  );
+
+  /* 真正的毛玻璃效果 */
+  backdrop-filter: blur(16px) saturate(1.8) brightness(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.8) brightness(1.1);
+
+  /* 边框 — 明亮的玻璃边框 */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.28);
+  border-left-color: rgba(255, 255, 255, 0.22);
+
+  /* 外发光 — 颜色对应每根长条色相 */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+    0 0 30px 4px hsla(var(--hue1, 240), var(--sat, 85%), var(--light, 58%), 0.12),
+    0 0 60px 12px hsla(var(--hue2, 260), var(--sat, 85%), var(--light, 58%), 0.06);
+
+  /* 微浮动动画 */
+  animation: slat-float var(--float-dur, 4s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+
+  opacity: 1;
 }
 
-/* 奇偶交替层次 */
-.glass-slat-item:nth-child(odd)  { opacity: 0.68; }
-.glass-slat-item:nth-child(3n)  { opacity: 0.52; width: calc(var(--w, 96px) * 0.72); }
-.glass-slat-item:nth-child(5n)  { opacity: 0.42; width: calc(var(--w, 96px) * 0.60); }
+/* 偶数根稍微窄/短，制造随机感（但不压暗！）*/
+.glass-slat-item:nth-child(even) { width: calc(var(--w, 64px) * 0.82); }
+.glass-slat-item:nth-child(3n)  { height: calc(var(--h, 180%) * 0.88); }
 
-/* 整条高光 */
-.glass-slat-item::before {
-  content: "";
+/* ===== 长条内部高光层 — 玻璃反光 ===== */
+.slat-shine {
   position: absolute;
-  top: 7%; left: 11%;
-  width: 78%; height: 26%;
-  border-radius: 999px;
-  background: linear-gradient(180deg,
-    rgba(255, 255, 255, 0.20) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  filter: blur(10px);
+  top: 0; left: 0; right: 0;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(160deg,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.08) 20%,
+      transparent 40%
+    ),
+    radial-gradient(ellipse at 85% 90%,
+      rgba(255, 255, 255, 0.06) 0%,
+      transparent 50%
+    );
   pointer-events: none;
+  mix-blend-mode: overlay;
 }
 
 /* 跑马灯扫光 */
 .glass-slat-item::after {
   content: "";
   position: absolute;
-  top: 0; left: -100%;
-  width: 50%; height: 100%;
+  top: 0; left: -120%;
+  width: 45%; height: 100%;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.07) 45%,
+    rgba(255, 255, 255, 0.12) 40%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.12) 60%,
     transparent 100%
   );
-  animation: slat-sweep 7s ease-in-out infinite;
+  animation: slat-sweep 6s ease-in-out infinite;
   animation-delay: var(--sweep-delay, 0s);
   pointer-events: none;
+  mix-blend-mode: screen;
 }
 
-/* 随机反光块 — 每根长条内嵌的闪烁小块 */
-.slat-spec-block {
-  position: absolute;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.23);
-  filter: blur(4px);
-  animation: spec-flicker var(--dur, 2s) ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
-  pointer-events: none;
-}
-
-@keyframes slat-drift {
-  0%   { transform: translateY(0); }
-  100% { transform: translateY(-16px); }
+/* ===== 动画关键帧 ===== */
+@keyframes slat-float {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-12px) scale(1.02); }
 }
 
 @keyframes slat-sweep {
-  0%   { left: -100%; }
-  42%  { left: -100%; }
-  58%  { left: 140%; }
-  100% { left: 140%; }
+  0%   { left: -120%; }
+  40%  { left: -120%; }
+  55%  { left: 160%; }
+  100% { left: 160%; }
 }
 
-@keyframes spec-flicker {
-  0%, 100% { opacity: 0; }
-  15%      { opacity: 0.7; }
-  30%      { opacity: 0.1; }
-  50%      { opacity: 0.9; }
-  70%      { opacity: 0.05; }
-  85%      { opacity: 0.6; }
-}
-
-/* 全局色相旋转 — 整组长条颜色一起漂移 */
 @keyframes global-hue-spin {
   0%   { filter: hue-rotate(0deg); }
   100% { filter: hue-rotate(360deg); }
 }
 
-/* ===== CENTER MASK — 黑雾遮罩 + 中心不规则洞 ===== */
+/* ===== 鼠标跟随光斑 ===== */
+.hero-mouse-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(236, 72, 153, 0.12) 0%,
+    rgba(99, 102, 241, 0.06) 30%,
+    transparent 60%
+  );
+  transition: background 0.15s ease;
+}
+
+/* ===== CENTER MASK — 黑雾遮罩 + 不规则洞 v6 ===== */
 .home-center-mask {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse 100% 90% at 50% 45%,
-    transparent 0%,
-    rgba(8, 8, 16, 0.35) 28%,
-    rgba(8, 8, 16, 0.80) 48%,
-    rgba(8, 8, 16, 0.97) 65%,
-    #080810 82%
-  );
-  animation: center-mask-morph 12s ease-in-out infinite alternate;
-  will-change: background;
+
+  /* 多层径向渐变叠加 — 模拟不规则形状的"洞" */
+  background:
+    /* 外层：纯黑雾 */
+    radial-gradient(
+      ellipse 95% 85% at 50% 45%,
+      transparent 0%,
+      rgba(7, 7, 12, 0.55) 22%,
+      rgba(7, 7, 12, 0.82) 38%,
+      rgba(7, 7, 12, 0.96) 52%,
+      #07070c 68%
+    ),
+    /* 第二层：稍微偏移的洞，制造不规则边缘 */
+    radial-gradient(
+      ellipse 80% 70% at 53% 42%,
+      transparent 0%,
+      rgba(7, 7, 12, 0.40) 25%,
+      rgba(7, 7, 12, 0.78) 42%,
+      #07070c 60%
+    ),
+    /* 第三层：底部偏移，让下半部更暗 */
+    radial-gradient(
+      ellipse 90% 75% at 48% 55%,
+      transparent 0%,
+      rgba(7, 7, 12, 0.65) 20%,
+      rgba(7, 7, 12, 0.92) 35%,
+      #07070c 55%
+    );
+
+  animation: mask-morph 14s ease-in-out infinite alternate;
 }
 
-@keyframes center-mask-morph {
+@keyframes mask-morph {
   0% {
     background:
-      radial-gradient(
-        ellipse 100% 88% at 48% 43%,
-        transparent 0%,
-        rgba(8, 8, 16, 0.30) 25%,
-        rgba(8, 8, 16, 0.78) 46%,
-        rgba(8, 8, 16, 0.97) 64%,
-        #080810 82%
-      );
+      radial-gradient(ellipse 95% 85% at 50% 45%, transparent 0%, rgba(7,7,12,.55) 22%, rgba(7,7,12,.82) 38%, rgba(7,7,12,.96) 52%, #07070c 68%),
+      radial-gradient(ellipse 80% 70% at 53% 42%, transparent 0%, rgba(7,7,12,.40) 25%, rgba(7,7,12,.78) 42%, #07070c 60%),
+      radial-gradient(ellipse 90% 75% at 48% 55%, transparent 0%, rgba(7,7,12,.65) 20%, rgba(7,7,12,.92) 35%, #07070c 55%);
   }
   100% {
     background:
-      radial-gradient(
-        ellipse 108% 95% at 53% 48%,
-        transparent 0%,
-        rgba(8, 8, 16, 0.38) 30%,
-        rgba(8, 8, 16, 0.83) 50%,
-        rgba(8, 8, 16, 0.97) 66%,
-        #080810 84%
-      );
+      radial-gradient(ellipse 105% 92% at 47% 43%, transparent 0%, rgba(7,7,12,.50) 24%, rgba(7,7,12,.80) 40%, rgba(7,7,12,.97) 55%, #07070c 72%),
+      radial-gradient(ellipse 75% 68% at 54% 46%, transparent 0%, rgba(7,7,12,.36) 26%, rgba(7,7,12,.76) 44%, #07070c 62%),
+      radial-gradient(ellipse 95% 82% at 46% 58%, transparent 0%, rgba(7,7,12,.60) 22%, rgba(7,7,12,.90) 38%, #07070c 58%);
   }
 }
 
