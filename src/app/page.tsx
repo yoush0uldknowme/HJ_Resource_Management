@@ -29,10 +29,13 @@ export default async function HomePage() {
         <div className="home-glow-bl" aria-hidden="true" />
         <div className="home-glow-br" aria-hidden="true" />
 
-        {/* bg: glass slats */}
+      {/* bg: glass slats */}
         <div className="home-slats-container" aria-hidden="true">
           <GlassSlats />
         </div>
+
+        {/* 中心遮罩 — 黑雾 + 不规则洞 */}
+        <div className="home-center-mask" aria-hidden="true" />
 
         {/* mouse glow */}
         <HeroMouseGlow />
