@@ -857,21 +857,16 @@ tr:hover td { background: var(--color-bg-hover); }
 /* ===== HERO ===== */
 .home-hero {
   position: relative;
-  min-height: calc(100vh - var(--topbar-height));
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   padding-top: var(--topbar-height);
   cursor: default;
-  /* Raycast 风格：近黑底色 + 中心微弱蓝紫径向渐变 */
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 35%,
-      rgba(30, 35, 70, 0.35) 0%,
-      rgba(15, 16, 24, 0.1) 50%,
-      transparent 80%
-    ),
-    var(--color-bg-base);
+  background: #080810;
 }
 
 /* dot grid */
@@ -931,16 +926,21 @@ tr:hover td { background: var(--color-bg-hover); }
   50%       { opacity: 0.9; transform: scale(1.08) translate(-8px, -12px); }
 }
 
-/* glass slats container */
+/* glass slats container — 全屏 + 全局色偏移动画 */
 .home-slats-container {
   position: absolute;
-  inset: -60% -30%;
+  inset: -50% -50%;
+  width: 200%;
+  height: 200%;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1;
   pointer-events: none;
   overflow: hidden;
+  /* 整组色相漂移：0° → 360° 循环 */
+  animation: global-hue-spin 28s linear infinite;
+  will-change: filter;
 }
 
 /* ===== 鼠标跟随光斑 ===== */
@@ -958,16 +958,18 @@ tr:hover td { background: var(--color-bg-hover); }
   transition: background 0.1s;
 }
 
-/* ===== GLASS SLATS — individual slat (Raycast 级) ===== */
+/* ===== GLASS SLATS — 全屏铺满 v4 ===== */
 .glass-slats-wrap {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 18px;
-  width: 150%;
-  height: 100%;
-  transform: rotate(-14deg) translateY(var(--y-offset, 0%));
+  gap: var(--gap, 16px);
+  width: 160%;
+  height: 200%;
+  margin-top: -30%;
+  transform: rotate(-22deg);
   pointer-events: none;
+  will-change: transform;
 }
 
 .glass-slat-item {
@@ -976,88 +978,73 @@ tr:hover td { background: var(--color-bg-hover); }
   height: var(--h, 100%);
   border-radius: 28px;
   position: relative;
-  /* 斜向渐变：从 hue1 到 hue2 */
   background: linear-gradient(
     168deg,
-    hsla(var(--hue1, 230), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.13)) 0%,
-    hsla(var(--hue2, 260), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.09)) 100%
+    hsla(var(--hue, 230), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.13)) 0%,
+    hsla(calc(var(--hue, 230) + 30), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.09)) 100%
   );
-  backdrop-filter: blur(10px) saturate(1.4);
-  -webkit-backdrop-filter: blur(10px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 50px 8px hsla(var(--hue1, 230), var(--sat, 80%), var(--light, 62%), 0.05);
-  animation:
-    slat-hue    var(--hue-dur, 5s) ease-in-out infinite alternate,
-    slat-drift  var(--float-dur, 3s) ease-in-out infinite alternate;
-  animation-delay: var(--delay, 0s), var(--delay, 0s);
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 0 40px 6px hsla(var(--hue, 230), var(--sat, 80%), var(--light, 62%), 0.04);
+  animation: slat-drift var(--drift-dur, 3.5s) ease-in-out infinite alternate;
+  animation-delay: var(--drift-delay, 0s);
   overflow: hidden;
-  opacity: 0.85;
+  opacity: 0.82;
 }
 
-/* 奇偶交替：一半实色一半更透明，制造层次感 */
-.glass-slat-item:nth-child(odd)  { opacity: 0.70; }
-.glass-slat-item:nth-child(3n)  { opacity: 0.55; width: calc(var(--w, 96px) * 0.78); }
-.glass-slat-item:nth-child(5n)  { opacity: 0.40; width: calc(var(--w, 96px) * 0.62); }
+/* 奇偶交替层次 */
+.glass-slat-item:nth-child(odd)  { opacity: 0.68; }
+.glass-slat-item:nth-child(3n)  { opacity: 0.52; width: calc(var(--w, 96px) * 0.72); }
+.glass-slat-item:nth-child(5n)  { opacity: 0.42; width: calc(var(--w, 96px) * 0.60); }
 
-/* specular highlight — 毛玻璃高光 */
+/* 整条高光 */
 .glass-slat-item::before {
   content: "";
   position: absolute;
-  top: 6%; left: 10%;
-  width: 80%; height: 28%;
+  top: 7%; left: 11%;
+  width: 78%; height: 26%;
   border-radius: 999px;
   background: linear-gradient(180deg,
-    rgba(255, 255, 255, 0.22) 0%,
-    rgba(255, 255, 255, 0.03) 100%
+    rgba(255, 255, 255, 0.20) 0%,
+    rgba(255, 255, 255, 0.02) 100%
   );
-  filter: blur(9px);
+  filter: blur(10px);
   pointer-events: none;
 }
 
-/* sweep light — 跑马灯扫光 */
+/* 跑马灯扫光 */
 .glass-slat-item::after {
   content: "";
   position: absolute;
   top: 0; left: -100%;
-  width: 55%; height: 100%;
+  width: 50%; height: 100%;
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.09) 45%,
+    rgba(255, 255, 255, 0.07) 45%,
     transparent 100%
   );
-  animation: slat-sweep var(--sweep-dur, 7s) ease-in-out infinite;
+  animation: slat-sweep 7s ease-in-out infinite;
   animation-delay: var(--sweep-delay, 0s);
   pointer-events: none;
 }
 
-@keyframes slat-hue {
-  0% {
-    background: linear-gradient(
-      168deg,
-      hsla(var(--hue1, 230), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.13)) 0%,
-      hsla(var(--hue2, 260), var(--sat, 80%), var(--light, 62%), var(--alpha, 0.09)) 100%
-    );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 0 50px 8px hsla(var(--hue1, 230), var(--sat, 80%), var(--light, 62%), 0.05);
-  }
-  100% {
-    background: linear-gradient(
-      168deg,
-      hsla(calc(var(--hue1, 230) + 60), var(--sat, 80%), var(--light, 62%), calc(var(--alpha, 0.13) * 1.3)) 0%,
-      hsla(calc(var(--hue2, 260) + 60), var(--sat, 80%), var(--light, 62%), calc(var(--alpha, 0.09) * 1.3)) 100%
-    );
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 0 70px 16px hsla(calc(var(--hue1, 230) + 60), var(--sat, 80%), var(--light, 62%), 0.08);
-  }
+/* 随机反光块 — 每根长条内嵌的闪烁小块 */
+.slat-spec-block {
+  position: absolute;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.23);
+  filter: blur(4px);
+  animation: spec-flicker var(--dur, 2s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  pointer-events: none;
 }
 
 @keyframes slat-drift {
   0%   { transform: translateY(0); }
-  100% { transform: translateY(-18px); }
+  100% { transform: translateY(-16px); }
 }
 
 @keyframes slat-sweep {
@@ -1065,6 +1052,64 @@ tr:hover td { background: var(--color-bg-hover); }
   42%  { left: -100%; }
   58%  { left: 140%; }
   100% { left: 140%; }
+}
+
+@keyframes spec-flicker {
+  0%, 100% { opacity: 0; }
+  15%      { opacity: 0.7; }
+  30%      { opacity: 0.1; }
+  50%      { opacity: 0.9; }
+  70%      { opacity: 0.05; }
+  85%      { opacity: 0.6; }
+}
+
+/* 全局色相旋转 — 整组长条颜色一起漂移 */
+@keyframes global-hue-spin {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* ===== CENTER MASK — 黑雾遮罩 + 中心不规则洞 ===== */
+.home-center-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 100% 90% at 50% 45%,
+    transparent 0%,
+    rgba(8, 8, 16, 0.35) 28%,
+    rgba(8, 8, 16, 0.80) 48%,
+    rgba(8, 8, 16, 0.97) 65%,
+    #080810 82%
+  );
+  animation: center-mask-morph 12s ease-in-out infinite alternate;
+  will-change: background;
+}
+
+@keyframes center-mask-morph {
+  0% {
+    background:
+      radial-gradient(
+        ellipse 100% 88% at 48% 43%,
+        transparent 0%,
+        rgba(8, 8, 16, 0.30) 25%,
+        rgba(8, 8, 16, 0.78) 46%,
+        rgba(8, 8, 16, 0.97) 64%,
+        #080810 82%
+      );
+  }
+  100% {
+    background:
+      radial-gradient(
+        ellipse 108% 95% at 53% 48%,
+        transparent 0%,
+        rgba(8, 8, 16, 0.38) 30%,
+        rgba(8, 8, 16, 0.83) 50%,
+        rgba(8, 8, 16, 0.97) 66%,
+        #080810 84%
+      );
+  }
 }
 
 /* ===== HERO CONTENT ===== */

@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HJ Resource — Motor Management Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+
+/* ===================================================================
+   DESIGN TOKENS
+   =================================================================== */
+:root {
+  --bg:          #0c0c0e;
+  --bg-2:        #111114;
+  --bg-3:        #18181c;
+  --bg-card:     rgba(255,255,255,0.035);
+  --bg-card-hov: rgba(255,255,255,0.06);
+  --border:      rgba(255,255,255,0.07);
+  --border-hov:  rgba(255,255,255,0.13);
+
+  --text-1:  #f0f0f3;
+  --text-2:  #8a8a9a;
+  --text-3:  #4a4a5a;
+
+  /* accent: warm blue-violet */
+  --acc:     #6e8efb;
+  --acc-2:   #a78bfa;
+  --acc-3:   #38bdf8;
+  --acc-glow:rgba(110,142,251,0.22);
+
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out:  cubic-bezier(0.25, 1, 0.5, 1);
+
+  --nav-h: 60px;
+  --max-w: 1120px;
+}
+
+/* ===================================================================
+   RESET
+   =================================================================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  line-height: 1.5;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+/* ===================================================================
+   LAYOUT HELPERS
+   =================================================================== */
+.container {
+  max-width: var(--max-w);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* ===================================================================
+   NAV
+   =================================================================== */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  padding-inline: 24px;
+  border-bottom: 1px solid transparent;
+  transition: background 300ms var(--ease-out), border-color 300ms var(--ease-out), backdrop-filter 300ms;
+}
+nav.scrolled {
+  background: rgba(12,12,14,0.82);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border-color: var(--border);
+}
+
+.nav-inner {
+  max-width: var(--max-w);
+  margin-inline: auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  margin-right: 32px;
+}
+.nav-logo-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--acc) 0%, var(--acc-2) 100%);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 0 16px rgba(110,142,251,0.4);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+.nav-links a {
+  font-size: 13.5px;
+  font-weight: 450;
+  color: var(--text-2);
+  padding: 6px 12px;
+  border-radius: 7px;
+  transition: color 150ms, background 150ms;
+  letter-spacing: -0.01em;
+}
+.nav-links a:hover { color: var(--text-1); background: rgba(255,255,255,0.06); }
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-login {
+  font-size: 13.5px;
+  color: var(--text-2);
+  padding: 6px 12px;
+  border-radius: 7px;
+  transition: color 150ms, background 150ms;
+}
+.nav-login:hover { color: var(--text-1); background: rgba(255,255,255,0.06); }
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  background: var(--text-1);
+  color: #0c0c0e;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: opacity 150ms, transform 100ms;
+}
+.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); opacity: 1; }
+
+/* ===================================================================
+   HERO SECTION
+   =================================================================== */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: var(--nav-h);
+}
+
+/* ---------- Background layers ---------- */
+
+/* dot grid */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 0%, transparent 100%);
+}
+
+/* Glass Slats — THE signature element */
+.hero-slats {
+  position: absolute;
+  inset: -60% -30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  transform: rotate(-13deg);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.slat {
+  flex-shrink: 0;
+  width: var(--w, 96px);
+  height: 100%;
+  border-radius: 32px;
+  position: relative;
+  background: hsla(var(--h, 240), 75%, 65%, var(--a, 0.12));
+  border: 1px solid rgba(255,255,255, 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 0 50px 10px hsla(var(--h, 240), 75%, 65%, 0.06);
+  animation:
+    slat-hue   var(--dur, 4s) ease-in-out infinite alternate,
+    slat-drift var(--fdur, 2.2s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+  overflow: hidden;
+}
+
+/* specular highlight on each slat */
+.slat::before {
+  content: '';
+  position: absolute;
+  top: 8%; left: 12%;
+  width: 76%; height: 30%;
+  border-radius: 999px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.02) 100%
+  );
+  filter: blur(8px);
+}
+
+/* sweeping light pass */
+.slat::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,0.06) 50%,
+    transparent
+  );
+  animation: slat-sweep var(--sdur, 6s) ease-in-out infinite;
+  animation-delay: var(--sdelay, 0s);
+}
+
+@keyframes slat-hue {
+  0%   { background: hsla(var(--h, 240), 70%, 65%, var(--a, 0.12)); box-shadow: 0 0 50px 10px hsla(var(--h, 240), 70%, 65%, 0.06); }
+  100% { background: hsla(calc(var(--h, 240) + 80), 75%, 62%, calc(var(--a, 0.12) * 1.5)); box-shadow: 0 0 70px 18px hsla(calc(var(--h, 240) + 80), 75%, 62%, 0.09); }
+}
+@keyframes slat-drift {
+  0%   { transform: translateY(0px); }
+  100% { transform: translateY(-20px); }
+}
+@keyframes slat-sweep {
+  0%   { left: -120%; }
+  45%  { left: -120%; }
+  55%  { left: 160%; }
+  100% { left: 160%; }
+}
+
+/* corner glows */
+.hero-glow-bl {
+  position: absolute;
+  bottom: -10%; left: -8%;
+  width: 50%; height: 55%;
+  background: radial-gradient(ellipse at 30% 80%,
+    rgba(110,142,251,0.18) 0%,
+    rgba(167,139,250,0.08) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 0;
+  animation: glow-breathe-a 7s ease-in-out infinite;
+}
+.hero-glow-br {
+  position: absolute;
+  bottom: -8%; right: -6%;
+  width: 45%; height: 50%;
+  background: radial-gradient(ellipse at 70% 80%,
+    rgba(56,189,248,0.14) 0%,
+    rgba(110,142,251,0.07) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  filter: blur(70px);
+  z-index: 0;
+  animation: glow-breathe-b 9s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+@keyframes glow-breathe-a {
+  0%, 100% { opacity: 0.6; transform: scale(1) translate(0,0); }
+  50%       { opacity: 1;   transform: scale(1.1) translate(10px,-15px); }
+}
+@keyframes glow-breathe-b {
+  0%, 100% { opacity: 0.5; transform: scale(1) translate(0,0); }
+  50%       { opacity: 0.9; transform: scale(1.08) translate(-8px,-12px); }
+}
+
+/* mouse follow glow */
+.hero-mouse-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    600px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(110,142,251,0.10) 0%,
+    rgba(56,189,248,0.04) 40%,
+    transparent 65%
+  );
+  transition: background 0.1s;
+}
+
+/* ---------- Hero content ---------- */
+.hero-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  max-width: 760px;
+  padding-inline: 24px;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px 5px 9px;
+  border: 1px solid var(--border-hov);
+  border-radius: var(--full, 999px);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: rgba(255,255,255,0.03);
+  margin-bottom: 32px;
+  letter-spacing: -0.01em;
+  backdrop-filter: blur(8px);
+  animation: fade-up 0.7s var(--ease-expo) both;
+}
+.hero-badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+  box-shadow: 0 0 8px rgba(110,142,251,0.7);
+}
+
+.hero-title {
+  font-size: clamp(3.2rem, 6.5vw, 5.4rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  color: var(--text-1);
+  margin-bottom: 24px;
+  animation: fade-up 0.7s 0.1s var(--ease-expo) both;
+}
+
+.hero-title .accent-word {
+  background: linear-gradient(135deg, var(--acc) 0%, var(--acc-2) 60%, var(--acc-3) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--text-2);
+  line-height: 1.65;
+  max-width: 480px;
+  margin-bottom: 40px;
+  letter-spacing: -0.01em;
+  animation: fade-up 0.7s 0.18s var(--ease-expo) both;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: fade-up 0.7s 0.26s var(--ease-expo) both;
+  margin-bottom: 80px;
+}
+
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  color: #0c0c0e;
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.2), 0 4px 20px rgba(0,0,0,0.4);
+}
+.btn-cta:hover { opacity: 0.88; transform: translateY(-1.5px); box-shadow: 0 0 0 1px rgba(255,255,255,0.3), 0 8px 32px rgba(0,0,0,0.5); }
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 1px solid var(--border-hov);
+  border-radius: 10px;
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--text-2);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  backdrop-filter: blur(8px);
+}
+.btn-secondary:hover { color: var(--text-1); border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.04); }
+
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 5px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--text-2);
+}
+
+/* Product mockup screenshot */
+.hero-mockup {
+  width: 100%;
+  max-width: 760px;
+  animation: fade-up 0.9s 0.35s var(--ease-expo) both;
+}
+
+.mockup-window {
+  background: var(--bg-3);
+  border: 1px solid var(--border-hov);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 32px 80px rgba(0,0,0,0.7),
+    0 0 120px rgba(110,142,251,0.08);
+}
+
+.mockup-titlebar {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.02);
+  gap: 7px;
+}
+.mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+.mock-dot.r { background: #ff5f57; }
+.mock-dot.y { background: #ffbd2e; }
+.mock-dot.g { background: #28c840; }
+
+.mockup-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 12px;
+  padding: 7px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+  max-width: 360px;
+  margin-inline: auto;
+}
+.search-icon {
+  width: 14px; height: 14px;
+  opacity: 0.5;
+  stroke: currentColor;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.mockup-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  min-height: 340px;
+}
+
+.mock-sidebar {
+  border-right: 1px solid var(--border);
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mock-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  transition: color 0.1s, background 0.1s;
+  cursor: default;
+}
+.mock-sidebar-item.active {
+  background: rgba(110,142,251,0.12);
+  color: #c4ccfd;
+}
+.mock-sidebar-item:hover:not(.active) {
+  background: var(--bg-card-hov);
+  color: var(--text-1);
+}
+.mock-icon {
+  width: 15px; height: 15px;
+  border-radius: 4px;
+  background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.mock-main {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mock-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 4px;
+  margin-bottom: 4px;
+}
+
+.mock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  transition: border-color 0.15s, background 0.15s;
+  cursor: default;
+}
+.mock-row:hover {
+  background: var(--bg-card-hov);
+  border-color: var(--border-hov);
+}
+.mock-row.highlight {
+  background: rgba(110,142,251,0.07);
+  border-color: rgba(110,142,251,0.2);
+}
+.mock-row-left {
+  display: flex; align-items: center; gap: 10px;
+}
+.mock-row-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: rgba(110,142,251,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+}
+.mock-row-info { display: flex; flex-direction: column; gap: 2px; }
+.mock-row-name { font-size: 12.5px; font-weight: 500; color: var(--text-1); }
+.mock-row-meta { font-size: 11px; color: var(--text-3); }
+.mock-badge {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 500;
+}
+.mock-badge.green  { background: rgba(52,199,89,0.12);  color: #34c759; }
+.mock-badge.blue   { background: rgba(110,142,251,0.12); color: #8ba4fd; }
+.mock-badge.amber  { background: rgba(245,158,11,0.12);  color: #f59e0b; }
+.mock-badge.red    { background: rgba(255,99,99,0.12);   color: #ff6363; }
+
+/* ===================================================================
+   FEATURE STRIP
+   =================================================================== */
+.features {
+  padding: 100px 0 80px;
+  position: relative;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--border);
+}
+.feature-cell {
+  padding: 36px 32px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: background 0.2s;
+}
+.feature-cell:hover { background: var(--bg-3); }
+.feat-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-hov);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.feat-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+}
+.feat-desc {
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ===================================================================
+   SECTION HEADER
+   =================================================================== */
+.section-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.section-eyebrow {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  color: var(--text-1);
+  margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 16px;
+  color: var(--text-2);
+  max-width: 480px;
+  margin-inline: auto;
+  line-height: 1.65;
+}
+
+/* ===================================================================
+   EXTENSION / INTEGRATION GRID
+   =================================================================== */
+.extensions { padding: 100px 0; }
+.ext-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+.ext-item {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  font-size: 10px;
+  color: var(--text-3);
+  transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s;
+  cursor: default;
+}
+.ext-item:hover {
+  border-color: var(--border-hov);
+  background: var(--bg-card-hov);
+  color: var(--text-2);
+  transform: translateY(-2px);
+}
+.ext-emoji { font-size: 22px; }
+.ext-label { font-size: 10px; text-align: center; }
+
+/* ===================================================================
+   AI SECTION
+   =================================================================== */
+.ai-section {
+  padding: 100px 0;
+  position: relative;
+  overflow: hidden;
+}
+.ai-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+.ai-text { display: flex; flex-direction: column; gap: 20px; }
+.ai-title {
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+.ai-desc { font-size: 15px; color: var(--text-2); line-height: 1.7; }
+.ai-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.ai-list li {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13.5px; color: var(--text-2);
+}
+.ai-list li::before {
+  content: '→';
+  color: var(--acc);
+  font-size: 12px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.ai-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border-hov);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 60px rgba(110,142,251,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ai-chat-bubble {
+  display: flex; gap: 12px;
+}
+.ai-avatar {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.ai-avatar.user { background: rgba(110,142,251,0.15); }
+.ai-avatar.bot  { background: linear-gradient(135deg, #6e8efb, #a78bfa); }
+
+.ai-message {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: var(--text-1);
+  line-height: 1.55;
+  flex: 1;
+}
+.ai-message.bot-msg {
+  border-color: rgba(110,142,251,0.18);
+  background: rgba(110,142,251,0.06);
+}
+
+/* typing cursor */
+.typing-cursor {
+  display: inline-block;
+  width: 2px; height: 12px;
+  background: var(--acc);
+  border-radius: 1px;
+  margin-left: 3px;
+  animation: blink 1s step-end infinite;
+  vertical-align: middle;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ===================================================================
+   TESTIMONIALS
+   =================================================================== */
+.testimonials { padding: 100px 0; }
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.testimonial-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.testimonial-card:hover {
+  border-color: var(--border-hov);
+  background: var(--bg-card-hov);
+}
+.testimonial-quote {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.65;
+  flex: 1;
+}
+.testimonial-quote strong { color: var(--text-1); font-weight: 500; }
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.testimonial-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.testimonial-name { font-size: 13px; font-weight: 500; color: var(--text-1); }
+.testimonial-role { font-size: 11.5px; color: var(--text-3); }
+.star-row { display: flex; gap: 2px; color: #f59e0b; font-size: 11px; }
+
+/* ===================================================================
+   FEATURE DEEP-DIVE CARDS
+   =================================================================== */
+.deep-dive { padding: 100px 0; }
+.dv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.dv-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.25s var(--ease-expo), border-color 0.2s, box-shadow 0.25s;
+  cursor: default;
+}
+.dv-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-hov);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4), 0 0 40px rgba(110,142,251,0.06);
+}
+.dv-card.span-2 { grid-column: span 2; }
+
+.dv-icon {
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  border: 1px solid var(--border-hov);
+}
+.dv-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.dv-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-1);
+  line-height: 1.2;
+}
+.dv-desc {
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* Snippet preview inside card */
+.snippet-demo {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  font-size: 12px;
+  color: #8b9cf4;
+  line-height: 1.7;
+}
+.snippet-demo .comment { color: var(--text-3); }
+.snippet-demo .keyword { color: var(--acc-2); }
+.snippet-demo .string  { color: #86efac; }
+
+/* Hotkey row */
+.hotkey-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--bg-2);
+  font-size: 12px;
+  color: var(--text-2);
+}
+.hotkey-row + .hotkey-row { margin-top: 4px; }
+.hotkey-keys { display: flex; gap: 3px; }
+.hotkey-keys kbd {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  background: var(--bg-3);
+  border: 1px solid var(--border-hov);
+}
+
+/* ===================================================================
+   FOOTER / COMMUNITY
+   =================================================================== */
+.footer-section {
+  border-top: 1px solid var(--border);
+  padding: 80px 0 60px;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 48px;
+  margin-bottom: 64px;
+}
+.footer-brand { display: flex; flex-direction: column; gap: 14px; }
+.footer-logo {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 14px; font-weight: 600;
+}
+.footer-tagline { font-size: 13px; color: var(--text-3); line-height: 1.6; max-width: 220px; }
+.footer-col h4 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 16px;
+}
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-links a {
+  font-size: 13.5px; color: var(--text-2);
+  transition: color 0.15s;
+}
+.footer-links a:hover { color: var(--text-1); }
+
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+
+/* ===================================================================
+   ANIMATIONS
+   =================================================================== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* scroll reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s var(--ease-expo), transform 0.65s var(--ease-expo);
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal.delay-1 { transition-delay: 0.1s; }
+.reveal.delay-2 { transition-delay: 0.2s; }
+.reveal.delay-3 { transition-delay: 0.3s; }
+.reveal.delay-4 { transition-delay: 0.4s; }
+
+/* ===================================================================
+   REDUCED MOTION
+   =================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* ===================================================================
+   RESPONSIVE
+   =================================================================== */
+@media (max-width: 900px) {
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .ai-inner { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+  .dv-grid { grid-template-columns: 1fr; }
+  .dv-card.span-2 { grid-column: span 1; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .mockup-body { grid-template-columns: 1fr; }
+  .mock-sidebar { display: none; }
+}
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  .features-grid { grid-template-columns: 1fr; }
+  .testimonials-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .btn-cta, .btn-secondary { width: 100%; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===============================================================
+     NAV
+     =============================================================== -->
+<nav id="main-nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="nav-logo-icon">HJ</div>
+      HJ Resource
+    </a>
+
+    <div class="nav-links">
+      <a href="#features">功能</a>
+      <a href="#extensions">扩展</a>
+      <a href="#ai-section">AI</a>
+      <a href="#pricing">定价</a>
+      <a href="#community">文档</a>
+    </div>
+
+    <div class="nav-right">
+      <a href="/login" class="nav-login">登录</a>
+      <a href="/login" class="btn-primary">
+        进入工作台
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 5h6M5 2l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===============================================================
+     HERO
+     =============================================================== -->
+<section class="hero" id="hero">
+  <!-- bg layers -->
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="hero-glow-bl" aria-hidden="true"></div>
+  <div class="hero-glow-br" aria-hidden="true"></div>
+
+  <!-- glass slats -->
+  <div class="hero-slats" aria-hidden="true">
+    <div class="slat" style="--h:240;--w:72px; --a:0.09;--dur:5.2s;--fdur:2.5s;--delay:0s;  --sdur:7s; --sdelay:0s"></div>
+    <div class="slat" style="--h:260;--w:105px;--a:0.13;--dur:4.8s;--fdur:2.1s;--delay:0.4s;--sdur:6.5s;--sdelay:1s"></div>
+    <div class="slat" style="--h:280;--w:82px; --a:0.10;--dur:6.1s;--fdur:2.8s;--delay:0.9s;--sdur:8s; --sdelay:0.5s"></div>
+    <div class="slat" style="--h:220;--w:118px;--a:0.15;--dur:5.5s;--fdur:2.0s;--delay:0.2s;--sdur:5.8s;--sdelay:2s"></div>
+    <div class="slat" style="--h:300;--w:90px; --a:0.11;--dur:4.5s;--fdur:2.6s;--delay:0.7s;--sdur:7.2s;--sdelay:0.8s"></div>
+    <div class="slat" style="--h:200;--w:76px; --a:0.08;--dur:6.5s;--fdur:2.3s;--delay:1.1s;--sdur:6s; --sdelay:1.5s"></div>
+    <div class="slat" style="--h:320;--w:110px;--a:0.14;--dur:5.0s;--fdur:1.9s;--delay:0.5s;--sdur:8.5s;--sdelay:0.3s"></div>
+    <div class="slat" style="--h:180;--w:84px; --a:0.09;--dur:5.8s;--fdur:2.4s;--delay:0.8s;--sdur:5.5s;--sdelay:2.5s"></div>
+    <div class="slat" style="--h:270;--w:66px; --a:0.07;--dur:7.0s;--fdur:2.7s;--delay:1.3s;--sdur:9s; --sdelay:1.2s"></div>
+    <div class="slat" style="--h:250;--w:95px; --a:0.12;--dur:4.2s;--fdur:2.1s;--delay:0.3s;--sdur:7.5s;--sdelay:0.6s"></div>
+    <div class="slat" style="--h:210;--w:78px; --a:0.10;--dur:5.3s;--fdur:2.5s;--delay:0.6s;--sdur:6.8s;--sdelay:1.8s"></div>
+  </div>
+
+  <!-- mouse glow -->
+  <div class="hero-mouse-glow" id="mouse-glow" aria-hidden="true"></div>
+
+  <!-- content -->
+  <div class="hero-content container">
+    <div class="hero-badge" role="status">
+      <div class="hero-badge-dot"></div>
+      v2.0 · 全新工作台上线
+    </div>
+
+    <h1 class="hero-title">
+      掌控每一台<br><span class="accent-word">电机资源</span>
+    </h1>
+
+    <p class="hero-sub">
+      面向仓库、实验室与现场的专业电机资源管理中枢。<br>
+      快速入库、精准追踪、一键出库，效率提升 10 倍。
+    </p>
+
+    <div class="hero-actions">
+      <a href="/login" class="btn-cta">
+        立即使用
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="/mobile" class="btn-secondary">
+        手机端扫码
+        <kbd>⌘ K</kbd>
+      </a>
+    </div>
+
+    <!-- Product screenshot mockup -->
+    <div class="hero-mockup">
+      <div class="mockup-window">
+        <div class="mockup-titlebar">
+          <div class="mock-dot r"></div>
+          <div class="mock-dot y"></div>
+          <div class="mock-dot g"></div>
+          <div class="mockup-search">
+            <svg class="search-icon" viewBox="0 0 16 16" width="14" height="14">
+              <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            搜索电机编号、型号、状态…
+            <kbd style="margin-left:auto">⌘ K</kbd>
+          </div>
+        </div>
+
+        <div class="mockup-body">
+          <div class="mock-sidebar">
+            <div class="mock-sidebar-item active">
+              <div class="mock-icon">📦</div> 全部资源
+            </div>
+            <div class="mock-sidebar-item">
+              <div class="mock-icon">✅</div> 在库
+            </div>
+            <div class="mock-sidebar-item">
+              <div class="mock-icon">🚀</div> 已出库
+            </div>
+            <div class="mock-sidebar-item">
+              <div class="mock-icon">⏳</div> 待处理
+            </div>
+            <div class="mock-sidebar-item">
+              <div class="mock-icon">🔧</div> 维修中
+            </div>
+            <div class="mock-sidebar-item" style="margin-top:auto">
+              <div class="mock-icon">⚙️</div> 设置
+            </div>
+          </div>
+
+          <div class="mock-main">
+            <div class="mock-section-title">最近入库</div>
+            <div class="mock-row highlight">
+              <div class="mock-row-left">
+                <div class="mock-row-icon">⚙️</div>
+                <div class="mock-row-info">
+                  <div class="mock-row-name">电机 · HJ-2025-A001</div>
+                  <div class="mock-row-meta">额定 7.5kW · 380V · 50Hz</div>
+                </div>
+              </div>
+              <span class="mock-badge green">在库</span>
+            </div>
+            <div class="mock-row">
+              <div class="mock-row-left">
+                <div class="mock-row-icon">⚡</div>
+                <div class="mock-row-info">
+                  <div class="mock-row-name">电机 · HJ-2025-B044</div>
+                  <div class="mock-row-meta">额定 15kW · 380V · IE3</div>
+                </div>
+              </div>
+              <span class="mock-badge blue">已出库</span>
+            </div>
+            <div class="mock-row">
+              <div class="mock-row-left">
+                <div class="mock-row-icon">🔧</div>
+                <div class="mock-row-info">
+                  <div class="mock-row-name">电机 · HJ-2024-C112</div>
+                  <div class="mock-row-meta">额定 4kW · 220V · 待检</div>
+                </div>
+              </div>
+              <span class="mock-badge amber">待处理</span>
+            </div>
+            <div class="mock-row">
+              <div class="mock-row-left">
+                <div class="mock-row-icon">⚙️</div>
+                <div class="mock-row-info">
+                  <div class="mock-row-name">电机 · HJ-2025-A018</div>
+                  <div class="mock-row-meta">额定 22kW · 380V · IE4</div>
+                </div>
+              </div>
+              <span class="mock-badge red">维修中</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     FEATURES
+     =============================================================== -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">核心优势</div>
+      <h2 class="section-title">专为电机资源设计</h2>
+      <p class="section-sub">从入库到出库，每个环节都精心设计，让资源管理变得轻松自然。</p>
+    </div>
+
+    <div class="features-grid reveal">
+      <div class="feature-cell">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">毫秒级响应</div>
+        <p class="feat-desc">扫码即查，搜索即达。无需等待，操作结果实时呈现，工作流不中断。</p>
+      </div>
+      <div class="feature-cell">
+        <div class="feat-icon">📱</div>
+        <div class="feat-title">移动优先</div>
+        <p class="feat-desc">手机扫二维码完成出入库，支持 PWA 离线使用，仓库现场无需电脑。</p>
+      </div>
+      <div class="feature-cell">
+        <div class="feat-icon">🔒</div>
+        <div class="feat-title">权限分级</div>
+        <p class="feat-desc">管理员与用户分离，操作留痕，每一次资源变动都有完整的审计日志。</p>
+      </div>
+      <div class="feature-cell">
+        <div class="feat-icon">🧩</div>
+        <div class="feat-title">开放扩展</div>
+        <p class="feat-desc">RESTful API 接口，轻松对接 ERP、WMS 系统，数据互通无障碍。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     EXTENSION / INTEGRATION GRID
+     =============================================================== -->
+<section class="extensions" id="extensions">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">集成生态</div>
+      <h2 class="section-title">连接你的工作流</h2>
+      <p class="section-sub">与你已有的工具无缝协作，数据流向你期望的每个地方。</p>
+    </div>
+
+    <div class="ext-grid reveal">
+      <!-- row 1 -->
+      <div class="ext-item"><div class="ext-emoji">📊</div><div class="ext-label">Excel</div></div>
+      <div class="ext-item"><div class="ext-emoji">📬</div><div class="ext-label">邮件通知</div></div>
+      <div class="ext-item"><div class="ext-emoji">💬</div><div class="ext-label">企业微信</div></div>
+      <div class="ext-item"><div class="ext-emoji">🔔</div><div class="ext-label">钉钉</div></div>
+      <div class="ext-item"><div class="ext-emoji">🐦</div><div class="ext-label">飞书</div></div>
+      <div class="ext-item"><div class="ext-emoji">🔗</div><div class="ext-label">Webhook</div></div>
+      <div class="ext-item"><div class="ext-emoji">🛢️</div><div class="ext-label">数据库</div></div>
+      <div class="ext-item"><div class="ext-emoji">📡</div><div class="ext-label">RFID</div></div>
+      <div class="ext-item"><div class="ext-emoji">📷</div><div class="ext-label">二维码</div></div>
+      <div class="ext-item"><div class="ext-emoji">📋</div><div class="ext-label">条形码</div></div>
+      <div class="ext-item"><div class="ext-emoji">☁️</div><div class="ext-label">云同步</div></div>
+      <div class="ext-item"><div class="ext-emoji">🖨️</div><div class="ext-label">打印机</div></div>
+      <!-- row 2 -->
+      <div class="ext-item"><div class="ext-emoji">📱</div><div class="ext-label">手机端</div></div>
+      <div class="ext-item"><div class="ext-emoji">🌐</div><div class="ext-label">REST API</div></div>
+      <div class="ext-item"><div class="ext-emoji">📦</div><div class="ext-label">WMS</div></div>
+      <div class="ext-item"><div class="ext-emoji">🏭</div><div class="ext-label">ERP</div></div>
+      <div class="ext-item"><div class="ext-emoji">📈</div><div class="ext-label">报表</div></div>
+      <div class="ext-item"><div class="ext-emoji">🔐</div><div class="ext-label">SSO</div></div>
+      <div class="ext-item"><div class="ext-emoji">📝</div><div class="ext-label">日志导出</div></div>
+      <div class="ext-item"><div class="ext-emoji">🗄️</div><div class="ext-label">备份</div></div>
+      <div class="ext-item"><div class="ext-emoji">⚙️</div><div class="ext-label">自动化</div></div>
+      <div class="ext-item"><div class="ext-emoji">🔍</div><div class="ext-label">全文搜索</div></div>
+      <div class="ext-item"><div class="ext-emoji">📊</div><div class="ext-label">BI 分析</div></div>
+      <div class="ext-item"><div class="ext-emoji">🧪</div><div class="ext-label">实验室</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     AI SECTION
+     =============================================================== -->
+<section class="ai-section" id="ai-section">
+  <div class="container">
+    <div class="ai-inner">
+      <div class="ai-text reveal">
+        <div class="section-eyebrow">AI 助手</div>
+        <h2 class="ai-title">像和同事对话<br>一样管理资源</h2>
+        <p class="ai-desc">
+          内置 AI 助手理解你的仓库语境，自然语言查询、
+          异常预警、出入库建议，让复杂决策变得直觉化。
+        </p>
+        <ul class="ai-list">
+          <li>自然语言查询：「哪些电机超过半年没动？」</li>
+          <li>智能预警：库存低于阈值自动提醒补货</li>
+          <li>异常识别：自动标记重复领用和异常记录</li>
+          <li>报表生成：一句话生成月度盘点报告</li>
+        </ul>
+      </div>
+
+      <div class="ai-card reveal delay-2">
+        <!-- user -->
+        <div class="ai-chat-bubble">
+          <div class="ai-avatar user">👤</div>
+          <div class="ai-message">查询所有在库、额定功率超过 11kW 的 IE4 电机，并按入库时间排序。</div>
+        </div>
+        <!-- bot response -->
+        <div class="ai-chat-bubble">
+          <div class="ai-avatar bot">✦</div>
+          <div class="ai-message bot-msg">
+            找到 <strong>7 台</strong>符合条件的电机：<br><br>
+            ① HJ-2025-A022 · 15kW IE4 · 入库 3 天前<br>
+            ② HJ-2025-A018 · 22kW IE4 · 入库 7 天前<br>
+            ③ HJ-2024-D007 · 11kW IE4 · 入库 12 天前<br>
+            <span style="color:var(--text-3);font-size:11.5px">… 及 4 条更多结果</span>
+            <span class="typing-cursor"></span>
+          </div>
+        </div>
+        <!-- suggested actions -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+          <button style="padding:5px 11px;border:1px solid var(--border-hov);border-radius:7px;font-size:11.5px;color:var(--text-2);cursor:pointer;transition:color 0.15s,background 0.15s" onmouseover="this.style.color='var(--text-1)';this.style.background='var(--bg-card-hov)'" onmouseout="this.style.color='var(--text-2)';this.style.background='transparent'">导出 Excel</button>
+          <button style="padding:5px 11px;border:1px solid var(--border-hov);border-radius:7px;font-size:11.5px;color:var(--text-2);cursor:pointer;transition:color 0.15s,background 0.15s" onmouseover="this.style.color='var(--text-1)';this.style.background='var(--bg-card-hov)'" onmouseout="this.style.color='var(--text-2)';this.style.background='transparent'">批量打印标签</button>
+          <button style="padding:5px 11px;border:1px solid var(--border-hov);border-radius:7px;font-size:11.5px;color:var(--text-2);cursor:pointer;transition:color 0.15s,background 0.15s" onmouseover="this.style.color='var(--text-1)';this.style.background='var(--bg-card-hov)'" onmouseout="this.style.color='var(--text-2)';this.style.background='transparent'">发送通知</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     TESTIMONIALS
+     =============================================================== -->
+<section class="testimonials" id="testimonials">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">用户评价</div>
+      <h2 class="section-title">工程师真实反馈</h2>
+    </div>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card reveal">
+        <div class="star-row">★★★★★</div>
+        <p class="testimonial-quote">
+          以前查一台电机要翻三张 Excel 表，现在扫一下二维码就出来了。
+          <strong>效率提升不是百分比能描述的。</strong>
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:rgba(110,142,251,0.15)">👷</div>
+          <div>
+            <div class="testimonial-name">李工</div>
+            <div class="testimonial-role">仓库主管 · 自动化设备厂</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card reveal delay-1">
+        <div class="star-row">★★★★★</div>
+        <p class="testimonial-quote">
+          <strong>手机端扫码出库</strong>太方便了，现场领料不用再回办公室操作了。
+          领导也能实时看到库存状态。
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:rgba(56,189,248,0.15)">🔬</div>
+          <div>
+            <div class="testimonial-name">张研究员</div>
+            <div class="testimonial-role">实验室工程师</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card reveal delay-2">
+        <div class="star-row">★★★★★</div>
+        <p class="testimonial-quote">
+          审计日志功能解决了我们长期头疼的责任追溯问题。
+          每次变动都有记录，<strong>再也不怕扯皮了。</strong>
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar" style="background:rgba(167,139,250,0.15)">🏭</div>
+          <div>
+            <div class="testimonial-name">陈厂长</div>
+            <div class="testimonial-role">生产总监 · 重工集团</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     FEATURE DEEP-DIVE
+     =============================================================== -->
+<section class="deep-dive" id="deep-dive">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-eyebrow">功能详解</div>
+      <h2 class="section-title">每个细节都经过打磨</h2>
+    </div>
+
+    <div class="dv-grid">
+      <div class="dv-card reveal">
+        <div class="dv-icon" style="background:rgba(110,142,251,0.1);border-color:rgba(110,142,251,0.2)">📦</div>
+        <div class="dv-label">入库管理</div>
+        <div class="dv-title">扫码即入库</div>
+        <p class="dv-desc">扫描铭牌或二维码自动识别型号，支持批量入库，减少手动录入 90%。</p>
+        <div class="snippet-demo">
+          <span class="comment">// 自动识别电机型号</span><br>
+          scan(<span class="string">"HJ-2025-A001"</span>)<br>
+          &nbsp;&nbsp;.<span class="keyword">then</span>(motor => {<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;stock.add(motor)<br>
+          &nbsp;&nbsp;})<br>
+        </div>
+      </div>
+
+      <div class="dv-card span-2 reveal delay-1">
+        <div class="dv-icon" style="background:rgba(56,189,248,0.1);border-color:rgba(56,189,248,0.2)">⌨️</div>
+        <div class="dv-label">快捷键</div>
+        <div class="dv-title">键盘优先的操作体验</div>
+        <p class="dv-desc">所有高频操作都有快捷键，熟练后双手不离键盘完成整个工作流。</p>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+          <div class="hotkey-row">
+            搜索电机
+            <div class="hotkey-keys"><kbd>⌘</kbd><kbd>K</kbd></div>
+          </div>
+          <div class="hotkey-row">
+            快速入库
+            <div class="hotkey-keys"><kbd>⌘</kbd><kbd>I</kbd></div>
+          </div>
+          <div class="hotkey-row">
+            出库申请
+            <div class="hotkey-keys"><kbd>⌘</kbd><kbd>O</kbd></div>
+          </div>
+          <div class="hotkey-row">
+            导出报表
+            <div class="hotkey-keys"><kbd>⌘</kbd><kbd>E</kbd></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dv-card reveal delay-2">
+        <div class="dv-icon" style="background:rgba(167,139,250,0.1);border-color:rgba(167,139,250,0.2)">📊</div>
+        <div class="dv-label">数据统计</div>
+        <div class="dv-title">实时库存看板</div>
+        <p class="dv-desc">总量、在库、出库、待处理，关键指标一屏掌握，管理层随时查阅。</p>
+      </div>
+
+      <div class="dv-card reveal delay-1">
+        <div class="dv-icon" style="background:rgba(52,199,89,0.1);border-color:rgba(52,199,89,0.2)">🤖</div>
+        <div class="dv-label">自动化</div>
+        <div class="dv-title">规则驱动的工作流</div>
+        <p class="dv-desc">设置库存阈值、到期提醒、异常预警，让系统主动告知，而非被动查询。</p>
+      </div>
+
+      <div class="dv-card reveal delay-2">
+        <div class="dv-icon" style="background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.2)">🔗</div>
+        <div class="dv-label">协作</div>
+        <div class="dv-title">多角色协同</div>
+        <p class="dv-desc">管理员审批，操作员执行，审计员查看。权限明确，流程清晰，减少沟通成本。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===============================================================
+     FOOTER / COMMUNITY
+     =============================================================== -->
+<footer class="footer-section" id="community">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <div class="nav-logo-icon">HJ</div>
+          HJ Resource
+        </div>
+        <p class="footer-tagline">
+          专为工业现场设计的电机资源管理平台，让每一台电机的生命周期清晰可见。
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>产品</h4>
+        <ul class="footer-links">
+          <li><a href="#">功能介绍</a></li>
+          <li><a href="#">扩展集成</a></li>
+          <li><a href="#">定价方案</a></li>
+          <li><a href="#">更新日志</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>资源</h4>
+        <ul class="footer-links">
+          <li><a href="#">开发文档</a></li>
+          <li><a href="#">API 参考</a></li>
+          <li><a href="#">使用教程</a></li>
+          <li><a href="#">社区论坛</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>公司</h4>
+        <ul class="footer-links">
+          <li><a href="#">关于我们</a></li>
+          <li><a href="#">联系支持</a></li>
+          <li><a href="#">隐私政策</a></li>
+          <li><a href="#">服务条款</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>© 2025 HJ Resource Management. All rights reserved.</span>
+      <span>Made with precision for engineers who care about details.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ===============================================================
+     JAVASCRIPT
+     =============================================================== -->
+<script>
+// Nav scroll effect
+const nav = document.getElementById('main-nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+}, { passive: true });
+
+// Mouse glow
+const mouseGlow = document.getElementById('mouse-glow');
+let rafId;
+document.addEventListener('mousemove', (e) => {
+  cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(() => {
+    const x = (e.clientX / window.innerWidth * 100).toFixed(1) + '%';
+    const y = (e.clientY / window.innerHeight * 100).toFixed(1) + '%';
+    mouseGlow.style.setProperty('--mx', x);
+    mouseGlow.style.setProperty('--my', y);
+  });
+}, { passive: true });
+
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+reveals.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
