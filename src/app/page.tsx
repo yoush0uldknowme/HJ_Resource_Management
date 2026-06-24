@@ -48,14 +48,8 @@ export default async function HomePage() {
           </div>
 
           <h1 className="home-headline">
-            掌控每一台<br />
-            <span className="home-headline-accent">电机资源</span>
+            <span className="home-headline-accent">悍匠资源管理系统</span>
           </h1>
-
-          <p className="home-subline">
-            面向仓库、实验室与现场的专业电机资源管理中枢。<br />
-            快速入库、精准追踪、一键出库，效率提升 10 倍。
-          </p>
 
           <div className="home-actions">
             <Link href={primaryHref} className="home-btn-cta">

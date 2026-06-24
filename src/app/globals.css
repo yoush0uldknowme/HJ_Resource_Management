@@ -873,7 +873,7 @@ html { overflow-x: hidden; }
   align-items: center;
   justify-content: center;
   cursor: default;
-  background: #07070c;
+  background: #0d0e14;
 }
 
 /* dot grid — 极其微弱的点阵 */
@@ -1149,39 +1149,38 @@ html { overflow-x: hidden; }
   transition: background 0.15s ease;
 }
 
-/* ===== CENTER MASK — 黑雾遮罩 + 不规则洞 v7 ===== */
+/* ===== CENTER MASK — 黑雾遮罩 v10（大幅减淡） ===== */
 .home-center-mask {
   position: absolute;
   inset: 0;
   z-index: 6;
   pointer-events: none;
 
-  /* 洞更大更柔和 — 中心约 50% 区域透光 */
   background:
     radial-gradient(
       ellipse 140% 125% at 50% 45%,
       transparent 0%,
-      transparent 20%,
-      rgba(7, 7, 12, 0.18) 38%,
-      rgba(7, 7, 12, 0.45) 55%,
-      rgba(7, 7, 12, 0.72) 68%,
-      #07070c 80%
+      transparent 35%,
+      rgba(7, 7, 12, 0.08) 52%,
+      rgba(7, 7, 12, 0.22) 68%,
+      rgba(7, 7, 12, 0.40) 82%,
+      #07070c 95%
     ),
     radial-gradient(
       ellipse 115% 105% at 53% 43%,
       transparent 0%,
-      transparent 22%,
-      rgba(7, 7, 12, 0.14) 40%,
-      rgba(7, 7, 12, 0.42) 58%,
-      #07070c 72%
+      transparent 38%,
+      rgba(7, 7, 12, 0.06) 54%,
+      rgba(7, 7, 12, 0.20) 72%,
+      #07070c 90%
     ),
     radial-gradient(
       ellipse 125% 115% at 48% 54%,
       transparent 0%,
-      transparent 18%,
-      rgba(7, 7, 12, 0.16) 36%,
-      rgba(7, 7, 12, 0.50) 52%,
-      #07070c 68%
+      transparent 40%,
+      rgba(7, 7, 12, 0.07) 56%,
+      rgba(7, 7, 12, 0.24) 74%,
+      #07070c 92%
     );
 
   animation: mask-morph 18s ease-in-out infinite alternate;
@@ -1190,15 +1189,15 @@ html { overflow-x: hidden; }
 @keyframes mask-morph {
   0% {
     background:
-      radial-gradient(ellipse 95% 85% at 50% 45%, transparent 0%, rgba(7,7,12,.55) 22%, rgba(7,7,12,.82) 38%, rgba(7,7,12,.96) 52%, #07070c 68%),
-      radial-gradient(ellipse 80% 70% at 53% 42%, transparent 0%, rgba(7,7,12,.40) 25%, rgba(7,7,12,.78) 42%, #07070c 60%),
-      radial-gradient(ellipse 90% 75% at 48% 55%, transparent 0%, rgba(7,7,12,.65) 20%, rgba(7,7,12,.92) 35%, #07070c 55%);
+      radial-gradient(ellipse 130% 118% at 51% 46%, transparent 0%, transparent 36%, rgba(7,7,12,.07) 54%, rgba(7,7,12,.20) 70%, rgba(7,7,12,.38) 85%, #07070c 96%),
+      radial-gradient(ellipse 108% 98% at 54% 44%, transparent 0%, transparent 40%, rgba(7,7,12,.05) 56%, rgba(7,7,12,.18) 74%, #07070c 92%),
+      radial-gradient(ellipse 118% 108% at 47% 55%, transparent 0%, transparent 42%, rgba(7,7,12,.06) 58%, rgba(7,7,12,.22) 76%, #07070c 93%);
   }
   100% {
     background:
-      radial-gradient(ellipse 105% 92% at 47% 43%, transparent 0%, rgba(7,7,12,.50) 24%, rgba(7,7,12,.80) 40%, rgba(7,7,12,.97) 55%, #07070c 72%),
-      radial-gradient(ellipse 75% 68% at 54% 46%, transparent 0%, rgba(7,7,12,.36) 26%, rgba(7,7,12,.76) 44%, #07070c 62%),
-      radial-gradient(ellipse 95% 82% at 46% 58%, transparent 0%, rgba(7,7,12,.60) 22%, rgba(7,7,12,.90) 38%, #07070c 58%);
+      radial-gradient(ellipse 142% 128% at 49% 44%, transparent 0%, transparent 34%, rgba(7,7,12,.08) 50%, rgba(7,7,12,.22) 66%, rgba(7,7,12,.42) 84%, #07070c 97%),
+      radial-gradient(ellipse 112% 102% at 52% 45%, transparent 0%, transparent 37%, rgba(7,7,12,.06) 53%, rgba(7,7,12,.20) 71%, #07070c 91%),
+      radial-gradient(ellipse 122% 112% at 49% 53%, transparent 0%, transparent 39%, rgba(7,7,12,.07) 55%, rgba(7,7,12,.24) 73%, #07070c 94%);
   }
 }
 
