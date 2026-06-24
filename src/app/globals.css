@@ -1031,7 +1031,7 @@ html { overflow-x: hidden; }
   100% { transform: translate(28px, -18px) scale(1.06); opacity: 0.58; }
 }
 
-/* ===== 单根长条 — 蓝紫单色系 → 白 v8 ===== */
+/* ===== 单根长条 — v11: 适中亮度 + 独立随机色相漂移 ===== */
 .glass-slat-item {
   flex-shrink: 0;
   width: var(--w, 54px);
@@ -1040,7 +1040,7 @@ html { overflow-x: hidden; }
   position: relative;
   overflow: hidden;
 
-  /* 主渐变：蓝紫彩色 → 白色 — 高不透明度，清晰可见的独立条带 */
+  /* 主渐变：蓝紫彩色 → 白色 */
   background: linear-gradient(
     168deg,
     hsla(var(--hue), var(--sat), var(--light), var(--alpha)) 0%,
@@ -1052,22 +1052,31 @@ html { overflow-x: hidden; }
   backdrop-filter: blur(12px) saturate(1.4);
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
 
-  /* 玻璃边框 — 更亮更明显 */
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-top-color: rgba(255, 255, 255, 0.42);
-  border-left-color: rgba(255, 255, 255, 0.34);
+  /* 玻璃边框 */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.28);
+  border-left-color: rgba(255, 255, 255, 0.22);
 
-  /* 外发光 — 增强每根条的可见度 */
+  /* 外发光 */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 0 24px 3px hsla(var(--hue), var(--sat), var(--light), 0.14),
-    0 0 50px 8px hsla(var(--hue), var(--sat), var(--light), 0.07);
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
+    0 0 20px 2px hsla(var(--hue), var(--sat), var(--light), 0.10),
+    0 0 44px 6px hsla(var(--hue), var(--sat), var(--light), 0.05);
 
-  /* 微浮动动画 */
-  animation: slat-float var(--float-dur, 4s) ease-in-out infinite alternate;
+  /* 双动画：微浮动 + 独立随机色相漂移（每根条不同步）*/
+  animation:
+    slat-float var(--float-dur, 4s) ease-in-out infinite alternate,
+    slat-hue-drift var(--hue-dur, 10s) ease-in-out infinite alternate;
+  animation-delay: 0s, var(--hue-delay, 0s);
 
   opacity: 1;
+}
+
+/* 每根条的色相漂移：独立周期、独立延迟 → 随机变化效果 */
+@keyframes slat-hue-drift {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(var(--hue-range, 50deg)); }
 }
 
 /* 所有长条统一宽度，不再用 nth-child 改变尺寸 */
@@ -1119,7 +1128,7 @@ html { overflow-x: hidden; }
 /* ===== 动画关键帧 ===== */
 @keyframes slat-float {
   0%   { transform: translateY(0) scale(1); }
-  100% { transform: translateY(-7px) scale(1.01); }
+  100% { transform: translateY(-5px) scale(1.008); }
 }
 
 @keyframes slat-sweep {
@@ -1149,7 +1158,7 @@ html { overflow-x: hidden; }
   transition: background 0.15s ease;
 }
 
-/* ===== CENTER MASK — 黑雾遮罩 v10（大幅减淡） ===== */
+/* ===== CENTER MASK — 黑雾遮罩 v11（适中：有遮罩感但不吃画面） ===== */
 .home-center-mask {
   position: absolute;
   inset: 0;
@@ -1160,27 +1169,27 @@ html { overflow-x: hidden; }
     radial-gradient(
       ellipse 140% 125% at 50% 45%,
       transparent 0%,
-      transparent 35%,
-      rgba(7, 7, 12, 0.08) 52%,
-      rgba(7, 7, 12, 0.22) 68%,
-      rgba(7, 7, 12, 0.40) 82%,
-      #07070c 95%
+      transparent 28%,
+      rgba(7, 7, 12, 0.15) 48%,
+      rgba(7, 7, 12, 0.38) 64%,
+      rgba(7, 7, 12, 0.62) 78%,
+      #0d0e14 92%
     ),
     radial-gradient(
       ellipse 115% 105% at 53% 43%,
       transparent 0%,
-      transparent 38%,
-      rgba(7, 7, 12, 0.06) 54%,
-      rgba(7, 7, 12, 0.20) 72%,
-      #07070c 90%
+      transparent 32%,
+      rgba(7, 7, 12, 0.11) 50%,
+      rgba(7, 7, 12, 0.35) 68%,
+      #0d0e14 88%
     ),
     radial-gradient(
       ellipse 125% 115% at 48% 54%,
       transparent 0%,
-      transparent 40%,
-      rgba(7, 7, 12, 0.07) 56%,
-      rgba(7, 7, 12, 0.24) 74%,
-      #07070c 92%
+      transparent 30%,
+      rgba(7, 7, 12, 0.13) 52%,
+      rgba(7, 7, 12, 0.42) 70%,
+      #0d0e14 90%
     );
 
   animation: mask-morph 18s ease-in-out infinite alternate;
@@ -1189,15 +1198,15 @@ html { overflow-x: hidden; }
 @keyframes mask-morph {
   0% {
     background:
-      radial-gradient(ellipse 130% 118% at 51% 46%, transparent 0%, transparent 36%, rgba(7,7,12,.07) 54%, rgba(7,7,12,.20) 70%, rgba(7,7,12,.38) 85%, #07070c 96%),
-      radial-gradient(ellipse 108% 98% at 54% 44%, transparent 0%, transparent 40%, rgba(7,7,12,.05) 56%, rgba(7,7,12,.18) 74%, #07070c 92%),
-      radial-gradient(ellipse 118% 108% at 47% 55%, transparent 0%, transparent 42%, rgba(7,7,12,.06) 58%, rgba(7,7,12,.22) 76%, #07070c 93%);
+      radial-gradient(ellipse 132% 118% at 51% 46%, transparent 0%, transparent 30%, rgba(7,7,12,.13) 50%, rgba(7,7,12,.35) 66%, rgba(7,7,12,.58) 80%, #0d0e14 93%),
+      radial-gradient(ellipse 108% 98% at 54% 44%, transparent 0%, transparent 34%, rgba(7,7,12,.09) 52%, rgba(7,7,12,.32) 70%, #0d0e14 89%),
+      radial-gradient(ellipse 118% 108% at 47% 55%, transparent 0%, transparent 32%, rgba(7,7,12,.11) 54%, rgba(7,7,12,.38) 72%, #0d0e14 91%);
   }
   100% {
     background:
-      radial-gradient(ellipse 142% 128% at 49% 44%, transparent 0%, transparent 34%, rgba(7,7,12,.08) 50%, rgba(7,7,12,.22) 66%, rgba(7,7,12,.42) 84%, #07070c 97%),
-      radial-gradient(ellipse 112% 102% at 52% 45%, transparent 0%, transparent 37%, rgba(7,7,12,.06) 53%, rgba(7,7,12,.20) 71%, #07070c 91%),
-      radial-gradient(ellipse 122% 112% at 49% 53%, transparent 0%, transparent 39%, rgba(7,7,12,.07) 55%, rgba(7,7,12,.24) 73%, #07070c 94%);
+      radial-gradient(ellipse 145% 130% at 49% 44%, transparent 0%, transparent 26%, rgba(7,7,12,.16) 46%, rgba(7,7,12,.40) 62%, rgba(7,7,12,.65) 82%, #0d0e14 95%),
+      radial-gradient(ellipse 112% 102% at 52% 45%, transparent 0%, transparent 30%, rgba(7,7,12,.12) 48%, rgba(7,7,12,.36) 68%, #0d0e14 90%),
+      radial-gradient(ellipse 125% 115% at 49% 53%, transparent 0%, transparent 28%, rgba(7,7,12,.14) 50%, rgba(7,7,12,.42) 72%, #0d0e14 92%);
   }
 }
 

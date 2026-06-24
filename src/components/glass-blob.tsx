@@ -39,23 +39,28 @@ interface Slat {
   hue: number;       // 主色相（220~270 蓝紫区间）
   sat: number;       // 饱和度（60~80，较高）
   light: number;     // 亮度（50~65）
-  alpha: number;     // 不透明度（0.55~0.78，清晰可见的独立条带）
+  alpha: number;     // 不透明度（0.40~0.62）
   height: number;    // 高度百分比
-  driftOffset: number; // 色相漂移相位偏移（让每条漂移不同步）
+  driftOffset: number; // 色相漂移相位偏移
+  hueDur: number;    // 色相漂移周期（8~16s，每根不同）
+  hueDelay: number;  // 色相漂移延迟（0~8s，错开变化时机）
+  hueRange: number;  // 色相漂移范围（30~70deg）
 }
 
 function generateSlats(): Slat[] {
   const slats: Slat[] = [];
   for (let i = 0; i < SLAT_COUNT; i++) {
-    // 色相在蓝紫区间均匀分布，加一点随机偏移
     const baseHue = 220 + (i / SLAT_COUNT) * 50 + (rand() - 0.5) * 12;
     slats.push({
       hue:         Math.round(baseHue),
-      sat:         Math.round(68 + rand() * 16),   // 68~84%
-      light:       Math.round(50 + rand() * 16),   // 50~66%
-      alpha:       parseFloat((0.55 + rand() * 0.23).toFixed(2)), // 0.55~0.78
-      height:      Math.round(90 + rand() * 40),   // 90~130%
+      sat:         Math.round(68 + rand() * 16),
+      light:       Math.round(50 + rand() * 16),
+      alpha:       parseFloat((0.40 + rand() * 0.22).toFixed(2)),
+      height:      Math.round(90 + rand() * 40),
       driftOffset: parseFloat((i * 0.28).toFixed(2)),
+      hueDur:      parseFloat((8 + rand() * 10).toFixed(1)),   // 8~18s
+      hueDelay:    parseFloat((rand() * 10).toFixed(1)),       // 0~10s 错开
+      hueRange:    Math.round(30 + rand() * 50),               // 30~80deg
     });
   }
   return slats;
@@ -80,8 +85,8 @@ export function GlassSlats() {
           key={i}
           className="glass-slat-item"
           style={{
-            "--i":        i,
-            "--w":        `${SLAT_WIDTH}px`,
+            "--i":         i,
+            "--w":         `${SLAT_WIDTH}px`,
             "--h":        `${s.height}%`,
             "--hue":      s.hue,
             "--sat":      `${s.sat}%`,
@@ -89,6 +94,9 @@ export function GlassSlats() {
             "--alpha":    s.alpha,
             "--drift":    s.driftOffset,
             "--float-dur": `${4 + (i % 4) * 0.6}s`,
+            "--hue-dur":   `${s.hueDur}s`,
+            "--hue-delay": `${s.hueDelay}s`,
+            "--hue-range": `${s.hueRange}deg`,
           } as React.CSSProperties}
         >
           {/* 高光扫过效果 */}
