@@ -857,11 +857,13 @@ tr:hover td { background: var(--color-bg-hover); }
 /* 防止全屏突破时出现横向滚动条 */
 html { overflow-x: hidden; }
 
-/* 登录后 .home-page 在 AppShell 内部时，突破容器限制 */
+/* 登录后 .home-page 在 AppShell 内部时，突破容器限制 + 阻止滚动 */
 .app-shell > .content > .home-page {
   margin: calc(-1 * var(--topbar-height)) -50vw 0 -50vw;
   padding: 0 50vw;
   width: 100vw;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 /* ===== HERO ===== */
@@ -972,77 +974,59 @@ html { overflow-x: hidden; }
   position: relative;
 }
 
-/* ===== 明亮背景层 — 毛玻璃需要这个才有模糊内容 ===== */
+/* ===== 明亮背景层 — 仅作为毛玻璃的模糊源，必须非常弱 ===== */
 .slats-bg-gradient {
   position: absolute;
   inset: -15% -25%;
   background:
     linear-gradient(135deg,
-      rgba(90, 140, 255, 0.32) 0%,
-      rgba(140, 100, 255, 0.28) 20%,
-      rgba(180, 120, 255, 0.24) 40%,
-      rgba(100, 160, 255, 0.30) 60%,
-      rgba(130, 90, 255, 0.26) 80%,
-      rgba(90, 140, 255, 0.32) 100%
-    ),
-    radial-gradient(ellipse at 25% 45%,
-      rgba(160, 130, 255, 0.38) 0%,
-      transparent 65%
-    ),
-    radial-gradient(ellipse at 75% 55%,
-      rgba(90, 170, 255, 0.34) 0%,
-      transparent 60%
+      rgba(100, 140, 255, 0.10) 0%,
+      rgba(150, 110, 255, 0.08) 25%,
+      rgba(170, 130, 255, 0.07) 50%,
+      rgba(110, 150, 255, 0.09) 75%,
+      rgba(100, 140, 255, 0.10) 100%
     );
-  filter: blur(14px);
+  filter: blur(30px);
   transform: rotate(-5deg) scale(1.15);
   z-index: 0;
-  animation: bg-pulse 16s ease-in-out infinite alternate;
 }
 
-/* 动态光斑 — 缓慢漂移 */
+/* 动态光斑 — 非常弱的氛围光，不抢戏 */
 .slats-light-pool {
   position: absolute;
   border-radius: 50%;
-  filter: blur(50px);
+  filter: blur(60px);
   z-index: 0;
-  opacity: 0.50;
+  opacity: 0.18;
 }
 .slats-light-pool.pool-1 {
-  width: 80%; height: 65%;
-  top: -18%; left: -12%;
+  width: 70%; height: 55%;
+  top: -15%; left: -10%;
   background: radial-gradient(ellipse at 40% 50%,
-    rgba(110, 150, 255, 0.55) 0%,
-    rgba(170, 130, 255, 0.30) 40%,
-    transparent 72%
+    rgba(120, 150, 255, 0.18) 0%,
+    transparent 70%
   );
   animation: pool-drift 14s ease-in-out infinite alternate;
 }
 .slats-light-pool.pool-2 {
-  width: 75%; height: 70%;
-  top: 5%; right: -22%;
+  width: 65%; height: 60%;
+  top: 8%; right: -18%;
   background: radial-gradient(ellipse at 60% 40%,
-    rgba(180, 130, 255, 0.50) 0%,
-    rgba(110, 160, 255, 0.26) 48%,
-    transparent 78%
+    rgba(170, 130, 255, 0.16) 0%,
+    transparent 72%
   );
   animation: pool-drift 18s ease-in-out infinite alternate;
   animation-delay: -5s;
 }
 .slats-light-pool.pool-3 {
-  width: 65%; height: 55%;
-  bottom: -12%; left: 18%;
+  width: 55%; height: 48%;
+  bottom: -10%; left: 15%;
   background: radial-gradient(ellipse at 50% 55%,
-    rgba(90, 190, 255, 0.44) 0%,
-    rgba(150, 120, 255, 0.22) 45%,
-    transparent 72%
+    rgba(90, 180, 255, 0.14) 0%,
+    transparent 70%
   );
   animation: pool-drift 16s ease-in-out infinite alternate;
   animation-delay: -9s;
-}
-
-@keyframes bg-pulse {
-  0%   { filter: blur(14px) brightness(1.0); opacity: 0.88; }
-  100% { filter: blur(22px) brightness(1.18); opacity: 1; }
 }
 
 @keyframes pool-drift {
@@ -1050,7 +1034,7 @@ html { overflow-x: hidden; }
   100% { transform: translate(28px, -18px) scale(1.06); opacity: 0.58; }
 }
 
-/* ===== 单根长条 — 蓝紫单色系 → 白 v7 ===== */
+/* ===== 单根长条 — 蓝紫单色系 → 白 v8 ===== */
 .glass-slat-item {
   flex-shrink: 0;
   width: var(--w, 54px);
@@ -1059,29 +1043,29 @@ html { overflow-x: hidden; }
   position: relative;
   overflow: hidden;
 
-  /* 主渐变：蓝紫彩色 → 白色（模拟 Raycast 玻璃质感）*/
+  /* 主渐变：蓝紫彩色 → 白色 — 高不透明度，清晰可见的独立条带 */
   background: linear-gradient(
     168deg,
     hsla(var(--hue), var(--sat), var(--light), var(--alpha)) 0%,
-    hsla(var(--hue), calc(var(--sat) * 0.5), calc(var(--light) + 22), calc(var(--alpha) * 0.65)) 48%,
-    hsla(var(--hue), calc(var(--sat) * 0.18), calc(var(--light) + 38), calc(var(--alpha) * 0.32)) 100%
+    hsla(var(--hue), calc(var(--sat) * 0.55), calc(var(--light) + 20), calc(var(--alpha) * 0.72)) 48%,
+    hsla(var(--hue), calc(var(--sat) * 0.2), calc(var(--light) + 35), calc(var(--alpha) * 0.38)) 100%
   );
 
-  /* 毛玻璃效果 — 背后有 .slats-bg-gradient 提供模糊内容 */
-  backdrop-filter: blur(18px) saturate(1.5) brightness(1.12);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.12);
+  /* 毛玻璃效果 */
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
 
-  /* 玻璃边框 */
-  border: 1px solid rgba(255, 255, 255, 0.20);
-  border-top-color: rgba(255, 255, 255, 0.32);
-  border-left-color: rgba(255, 255, 255, 0.26);
+  /* 玻璃边框 — 更亮更明显 */
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-top-color: rgba(255, 255, 255, 0.42);
+  border-left-color: rgba(255, 255, 255, 0.34);
 
-  /* 外发光 */
+  /* 外发光 — 增强每根条的可见度 */
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.10),
-    0 0 20px 2px hsla(var(--hue), var(--sat), var(--light), 0.09),
-    0 0 44px 6px hsla(var(--hue), var(--sat), var(--light), 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 0 24px 3px hsla(var(--hue), var(--sat), var(--light), 0.14),
+    0 0 50px 8px hsla(var(--hue), var(--sat), var(--light), 0.07);
 
   /* 微浮动动画 */
   animation: slat-float var(--float-dur, 4s) ease-in-out infinite alternate;

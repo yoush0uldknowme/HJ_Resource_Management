@@ -38,8 +38,8 @@ const SLAT_GAP   = 2;          // px，紧密排列
 interface Slat {
   hue: number;       // 主色相（220~270 蓝紫区间）
   sat: number;       // 饱和度（60~80，较高）
-  light: number;     // 亮度（45~60）
-  alpha: number;     // 不透明度（0.32~0.52，半透明才有玻璃感）
+  light: number;     // 亮度（50~65）
+  alpha: number;     // 不透明度（0.55~0.78，清晰可见的独立条带）
   height: number;    // 高度百分比
   driftOffset: number; // 色相漂移相位偏移（让每条漂移不同步）
 }
@@ -51,10 +51,10 @@ function generateSlats(): Slat[] {
     const baseHue = 220 + (i / SLAT_COUNT) * 50 + (rand() - 0.5) * 12;
     slats.push({
       hue:         Math.round(baseHue),
-      sat:         Math.round(65 + rand() * 18),   // 65~83%
-      light:       Math.round(46 + rand() * 14),   // 46~60%
-      alpha:       parseFloat((0.30 + rand() * 0.22).toFixed(2)), // 0.30~0.52
-      height:      Math.round(82 + rand() * 36),   // 82~118%
+      sat:         Math.round(68 + rand() * 16),   // 68~84%
+      light:       Math.round(50 + rand() * 16),   // 50~66%
+      alpha:       parseFloat((0.55 + rand() * 0.23).toFixed(2)), // 0.55~0.78
+      height:      Math.round(90 + rand() * 40),   // 90~130%
       driftOffset: parseFloat((i * 0.28).toFixed(2)),
     });
   }
