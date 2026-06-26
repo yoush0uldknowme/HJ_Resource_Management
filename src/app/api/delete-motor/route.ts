@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { rm } from "node:fs/promises";
+import path from "node:path";
 import { getCurrentUser, isAdmin } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth/index";
@@ -69,6 +71,14 @@ export async function POST(request: NextRequest) {
       // 删除电机（照片和已完成的出库申请引用通过 onDelete: Cascade/SetNull 自动处理）
       await tx.motor.delete({ where: { id: motorId } });
     });
+
+    // 事务成功后清理磁盘上的照片文件
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "motors", String(motorId));
+    try {
+      await rm(uploadDir, { recursive: true, force: true });
+    } catch {
+      // 目录不存在或无权限，不影响主流程
+    }
 
     revalidatePath("/motors");
     revalidatePath("/logs");

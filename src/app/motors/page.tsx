@@ -66,7 +66,7 @@ export default async function MotorsPage({
         <div>
           <span className="eyebrow">MOTOR MODULE</span>
           <h1>电机型号库</h1>
-          <p>按型号分组查看电机资源。先选型号，再进入具体编号和状态，减少在长表格里翻找。</p>
+          <p>按型号分组查看电机资源。点击型号卡片，筛选查看该型号下所有电机。</p>
         </div>
         <div className="motors-hero-stats">
           <span>
@@ -105,14 +105,18 @@ export default async function MotorsPage({
       <section className="model-grid">
         {modelGroups.map((group) => (
           <article className="model-card" key={group.model}>
-            <div className="model-card-visual">
+            <Link
+              href={`/motors?q=${encodeURIComponent(group.model)}`}
+              className="model-card-visual"
+              style={{ textDecoration: "none", color: "inherit", cursor: "pointer" }}
+            >
               <div className="model-orbit" aria-hidden="true" />
               <div>
                 <span className="eyebrow">MODEL</span>
                 <h2>{group.model}</h2>
               </div>
               <strong>{group.items.length}</strong>
-            </div>
+            </Link>
             <div className="model-metrics">
               <span>
                 <strong>{group.inStock}</strong>
@@ -127,33 +131,36 @@ export default async function MotorsPage({
                 待入库
               </span>
             </div>
-            <div className="model-motor-list">
-              {group.items.map((motor) => (
-                <Link className="model-motor-row" href={`/motors/${motor.id}`} key={motor.id}>
-                  {motor.photos[0] ? (
-                    <Image
-                      src={motor.photos[0].photoPath}
-                      alt={motor.motorCode}
-                      width={52}
-                      height={52}
-                      className="model-thumb"
-                    />
-                  ) : (
-                    <div className="model-thumb placeholder">无图</div>
-                  )}
-                  <div>
-                    <strong>{motor.motorCode}</strong>
-                    <span>{motor.name}</span>
-                  </div>
-                  <span className={`badge ${motor.status === "draft" ? "warn" : ""}`}>
-                    {motorStatusLabel(motor.status)}
-                  </span>
-                </Link>
-              ))}
-            </div>
+            {/* 搜索结果时展开具体电机列表，否则只显示概览卡片 */}
+            {q ? (
+              <div className="model-motor-list">
+                {group.items.map((motor) => (
+                  <Link className="model-motor-row" href={`/motors/${motor.id}`} key={motor.id}>
+                    {motor.photos[0] ? (
+                      <Image
+                        src={motor.photos[0].photoPath}
+                        alt={motor.motorCode}
+                        width={52}
+                        height={52}
+                        className="model-thumb"
+                      />
+                    ) : (
+                      <div className="model-thumb placeholder">无图</div>
+                    )}
+                    <div>
+                      <strong>{motor.motorCode}</strong>
+                      <span>{motor.name}</span>
+                    </div>
+                    <span className={`badge ${motor.status === "draft" ? "warn" : ""}`}>
+                      {motorStatusLabel(motor.status)}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
             <div className="row-actions">
               <Link className="button secondary compact" href={`/motors?q=${encodeURIComponent(group.model)}`}>
-                查看该型号
+                {q ? "查看全部" : `查看 ${group.items.length} 台电机`}
               </Link>
               {admin ? (
                 <Link className="button secondary compact" href="/motors/new">
