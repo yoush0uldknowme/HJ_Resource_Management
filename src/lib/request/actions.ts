@@ -250,8 +250,9 @@ export async function approveOutboundRequestAction(formData: FormData) {
     redirect("/admin/requests?error=request_not_pending");
   }
 
-  // 如果用户没有预选电机，管理员必须指定
-  if (!motorId && !request.assignedMotorId) {
+  // 如果用户没有预选电机且数量 > 1，管理员可以不指定（由扫码按型号匹配）
+  // 如果数量 = 1 且用户没有预选电机，管理员必须指定
+  if (!motorId && !request.assignedMotorId && request.quantity === 1) {
     redirect("/admin/requests?error=motor_required");
   }
 

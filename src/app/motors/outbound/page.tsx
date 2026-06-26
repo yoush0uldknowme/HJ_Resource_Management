@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ResultPanel } from "@/components/result-panel";
 import { ScanCodeField } from "@/components/scan-code-field";
 import { decodeFromSearchParams } from "@/lib/result";
-import { outboundMotorAction } from "@/lib/motor/actions";
+import { outboundMotorAction, batchOutboundMotorAction } from "@/lib/motor/actions";
 import { createOutboundRequestAction } from "@/lib/request/actions";
 import { isAdmin, requireOperator } from "@/lib/auth/index";
 import { findMotorByCode } from "@/lib/motor/lookup";
@@ -26,11 +26,16 @@ export default async function OutboundPage({
         <div className="page-head">
           <div>
             <h1>直接出库（管理员）</h1>
-            <p>输入电机编号，直接完成出库登记，无需审批流程。</p>
+            <p>逐台出库或批量出库，无需审批流程。</p>
           </div>
         </div>
         <ResultPanel result={result} />
+
+        {/* 逐台出库 */}
         <form className="panel form" action={outboundMotorAction}>
+          <h2 style={{ fontSize: "var(--text-lg)", fontWeight: 600, margin: "0 0 var(--space-4)" }}>
+            逐台出库
+          </h2>
           <ScanCodeField defaultValue={params.code?.trim()} />
           <div className="form-grid">
             <div className="field">
@@ -47,6 +52,41 @@ export default async function OutboundPage({
             <textarea id="remark" name="remark" placeholder="填写用途或其他说明" />
           </div>
           <button className="button" type="submit">确认出库</button>
+        </form>
+
+        {/* 批量出库 */}
+        <form className="panel form" action={batchOutboundMotorAction}>
+          <h2 style={{ fontSize: "var(--text-lg)", fontWeight: 600, margin: "0 0 var(--space-4)" }}>
+            批量出库
+          </h2>
+          <p className="muted" style={{ marginBottom: "var(--space-4)" }}>
+            每行一个电机编号，或用逗号/空格分隔，一次提交批量处理多台电机。
+          </p>
+          <div className="field">
+            <label htmlFor="batch-codes">电机编号列表</label>
+            <textarea
+              id="batch-codes"
+              name="scannedCodes"
+              rows={5}
+              placeholder="GM6020-0001&#10;GM6020-0002&#10;GM6020-0003"
+              required
+            />
+          </div>
+          <div className="form-grid">
+            <div className="field">
+              <label htmlFor="batch-issuedBy">出库人</label>
+              <input id="batch-issuedBy" name="issuedBy" required placeholder="请输入姓名" />
+            </div>
+            <div className="field">
+              <label htmlFor="batch-vehicle">使用车辆 / 去向</label>
+              <input id="batch-vehicle" name="vehicle" required placeholder="例如：英雄车、步兵1号" />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="batch-remark">备注（选填）</label>
+            <textarea id="batch-remark" name="remark" placeholder="填写用途或其他说明" />
+          </div>
+          <button className="button" type="submit">批量出库</button>
         </form>
       </>
     );

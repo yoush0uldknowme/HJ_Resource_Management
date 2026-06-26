@@ -25,7 +25,12 @@ export default async function AdminRequestsPage({
       <div className="page-head">
         <div>
           <h1>出库申请审批</h1>
-          <p>审批后，申请人可在手机端扫码执行出库。审批时必须指定一台在库电机，避免同型号电机被误领。</p>
+          <p>
+            审批后，申请人可在手机端扫码执行出库。
+            {requests.some(r => r.quantity > 1)
+              ? " 数量 > 1 的申请可不指定电机，扫码时按型号自动匹配。"
+              : " 审批时必须指定一台在库电机。"}
+          </p>
         </div>
       </div>
       {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>已批准申请，请通知领用人前往手机端扫码出库。</p></div> : null}
@@ -66,14 +71,15 @@ export default async function AdminRequestsPage({
                     <input type="hidden" name="requestId" value={request.id} />
                     <div className="field">
                       <label htmlFor={`motor-${request.id}`}>
-                        指定电机（必选）
+                        {request.quantity === 1 ? "指定电机（必选）" : "指定电机（可选，不选则扫码时按型号匹配）"}
                       </label>
                       <select
                         id={`motor-${request.id}`}
                         name="motorId"
-                        defaultValue={request.assignedMotorId && request.assignedMotor?.status === "in_stock" ? String(request.assignedMotorId) : "none"}
+                        defaultValue={request.assignedMotorId && request.assignedMotor?.status === "in_stock" ? String(request.assignedMotorId) : request.quantity === 1 ? "none" : ""}
                       >
-                        <option value="none" disabled>请选择具体电机</option>
+                        {request.quantity > 1 ? <option value="">不指定（扫码时自动匹配型号）</option> : null}
+                        <option value="none" disabled={request.quantity === 1}>请选择具体电机</option>
                         {candidates.map((motor) => {
                           const isPreSelected = motor.id === request.assignedMotorId;
                           return (

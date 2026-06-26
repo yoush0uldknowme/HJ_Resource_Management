@@ -169,9 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (mode === "executeApproved") {
-      // 扫码执行已审批的出库申请
-      // 1. 先查找指定了该电机的已审批申请
-      // 2. 再查找同型号未指定电机的已审批申请
+      // 扫码执行已审批的出库申请 — 事务内查找+执行，防止竞态
       if (motor.status !== "in_stock") {
         return NextResponse.json({
           ok: false,
@@ -180,82 +178,109 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      let approvedRequest = await prisma.outboundRequest.findFirst({
-        where: {
-          assignedMotorId: motor.id,
-          status: "approved"
-        }
-      });
+      try {
+        await prisma.$transaction(async (tx) => {
+          // 事务内查找已审批的申请
+          let approvedRequest = await tx.outboundRequest.findFirst({
+            where: {
+              assignedMotorId: motor.id,
+              status: "approved"
+            }
+          });
 
-      if (!approvedRequest) {
-        approvedRequest = await prisma.outboundRequest.findFirst({
-          where: {
-            model: motor.model,
-            assignedMotorId: null,
-            status: "approved"
-          },
-          orderBy: { createdAt: "asc" }
-        });
-      }
-
-      if (!approvedRequest) {
-        return NextResponse.json({
-          ok: false,
-          motorCode: motor.motorCode,
-          message: `${motor.motorCode} 没有已审批的出库申请`
-        });
-      }
-
-      // 校验申请人身份 — 只有申请人本人才能执行自己的出库申请
-      if (approvedRequest.requesterId !== user.id) {
-        return NextResponse.json({
-          ok: false,
-          motorCode: motor.motorCode,
-          message: `该出库申请不属于您，无法执行出库`
-        }, { status: 403 });
-      }
-
-      const next = applyOutbound(
-        { status: motor.status, currentLocation: motor.currentLocation },
-        {
-          operator: user.username,
-          issuedBy: approvedRequest.targetPerson,
-          vehicle: approvedRequest.destination,
-          remark: approvedRequest.remark ?? undefined
-        }
-      );
-
-      const newExecutedCount = approvedRequest.executedCount + 1;
-      const isFullyCompleted = newExecutedCount >= approvedRequest.quantity;
-
-      await prisma.$transaction([
-        prisma.motor.update({
-          where: { id: motor.id },
-          data: {
-            status: next.motor.status,
-            currentLocation: next.motor.currentLocation,
-            transactions: { create: next.transaction }
+          if (!approvedRequest) {
+            approvedRequest = await tx.outboundRequest.findFirst({
+              where: {
+                model: motor.model,
+                assignedMotorId: null,
+                status: "approved"
+              },
+              orderBy: { createdAt: "asc" }
+            });
           }
-        }),
-        prisma.outboundRequest.update({
-          where: { id: approvedRequest.id },
-          data: {
-            executedCount: newExecutedCount,
-            status: isFullyCompleted ? "completed" : "approved",
-            assignedMotorId: isFullyCompleted ? approvedRequest.assignedMotorId : null,
+
+          if (!approvedRequest) {
+            throw new Error("NO_APPROVED_REQUEST");
           }
-        })
-      ]);
 
-      revalidatePath("/motors");
-      revalidatePath("/logs");
-      revalidatePath("/admin/requests");
+          // 校验申请人身份
+          if (approvedRequest.requesterId !== user.id) {
+            throw new Error("NOT_OWN_REQUEST");
+          }
 
-      return NextResponse.json({
-        ok: true,
-        motorCode: motor.motorCode,
-        message: `${motor.motorCode} 已出库给 ${approvedRequest.targetPerson}（${newExecutedCount}/${approvedRequest.quantity}）✓`
-      });
+          // 事务内重检电机状态
+          const currentMotor = await tx.motor.findUnique({ where: { id: motor.id } });
+          if (!currentMotor || currentMotor.status !== "in_stock") {
+            throw new Error("MOTOR_NOT_IN_STOCK");
+          }
+
+          const next = applyOutbound(
+            { status: currentMotor.status, currentLocation: currentMotor.currentLocation },
+            {
+              operator: user.username,
+              issuedBy: approvedRequest.targetPerson,
+              vehicle: approvedRequest.destination,
+              remark: approvedRequest.remark ?? undefined
+            }
+          );
+
+          const newExecutedCount = approvedRequest.executedCount + 1;
+          const isFullyCompleted = newExecutedCount >= approvedRequest.quantity;
+
+          await tx.motor.update({
+            where: { id: motor.id },
+            data: {
+              status: next.motor.status,
+              currentLocation: next.motor.currentLocation,
+              transactions: { create: next.transaction }
+            }
+          });
+
+          await tx.outboundRequest.update({
+            where: { id: approvedRequest.id },
+            data: {
+              executedCount: newExecutedCount,
+              status: isFullyCompleted ? "completed" : "approved",
+              assignedMotorId: isFullyCompleted ? approvedRequest.assignedMotorId : null,
+            }
+          });
+        });
+
+        revalidatePath("/motors");
+        revalidatePath("/logs");
+        revalidatePath("/admin/requests");
+
+        return NextResponse.json({
+          ok: true,
+          motorCode: motor.motorCode,
+          message: `${motor.motorCode} 已出库 ✓`
+        });
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error.message === "NO_APPROVED_REQUEST") {
+            return NextResponse.json({
+              ok: false,
+              motorCode: motor.motorCode,
+              message: `${motor.motorCode} 没有已审批的出库申请`
+            });
+          }
+          if (error.message === "NOT_OWN_REQUEST") {
+            return NextResponse.json({
+              ok: false,
+              motorCode: motor.motorCode,
+              message: `该出库申请不属于您，无法执行出库`
+            }, { status: 403 });
+          }
+          if (error.message === "MOTOR_NOT_IN_STOCK") {
+            return NextResponse.json({
+              ok: false,
+              motorCode: motor.motorCode,
+              message: `${motor.motorCode} 状态已变更，不再是在库状态`
+            });
+          }
+        }
+        throw error;
+      }
     }
 
     return NextResponse.json(

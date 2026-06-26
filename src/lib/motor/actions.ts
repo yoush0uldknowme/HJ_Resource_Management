@@ -489,7 +489,9 @@ export async function batchOutboundMotorAction(formData: FormData) {
   const issuedBy = String(formData.get("issuedBy") ?? "").trim();
   const vehicle = String(formData.get("vehicle") ?? "").trim();
   const remark = String(formData.get("remark") ?? "").trim();
-  const returnPath = "/mobile/outbound/batch";
+  // 根据来源判断重定向路径（桌面端 vs 移动端）
+  const isMobile = String(formData.get("source") ?? "").trim() === "mobile";
+  const returnPath = isMobile ? "/mobile/outbound/batch" : "/motors/outbound";
 
   if (!rawCodes) {
     redirect(
