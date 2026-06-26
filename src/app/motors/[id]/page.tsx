@@ -3,6 +3,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/copy-button";
+import { DeleteMotorButton } from "@/components/delete-motor-button";
 import { isAdmin, isOperator, requireCurrentUser } from "@/lib/auth/index";
 import { renderCode128Svg } from "@/lib/code128";
 import { prisma } from "@/lib/prisma";
@@ -50,6 +51,9 @@ export default async function MotorDetailPage({
             <Link className="button secondary" href={`/motors/${motor.id}/edit`}>
               编辑
             </Link>
+          ) : null}
+          {admin ? (
+            <DeleteMotorButton motorId={motor.id} motorCode={motor.motorCode} />
           ) : null}
           {operator ? (
             <Link className="button secondary" href="/motors/inbound">

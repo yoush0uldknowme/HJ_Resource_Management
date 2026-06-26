@@ -8,7 +8,8 @@ export const MOTOR_STATUS_LABEL: Record<string, string> = {
 export const TRANSACTION_LABEL: Record<string, string> = {
   create: "建档",
   inbound: "入库",
-  outbound: "出库"
+  outbound: "出库",
+  status_change: "状态变更"
 };
 
 export function motorStatusLabel(status: string): string {

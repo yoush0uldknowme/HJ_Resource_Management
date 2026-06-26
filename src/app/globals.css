@@ -1809,6 +1809,7 @@ tr:hover td { background: var(--color-bg-hover); }
 
 .feedback-panel { max-width: 640px; }
 .error { color: var(--color-error); font-size: var(--text-sm); }
+.success { color: var(--color-success); font-size: var(--text-sm); }
 
 .result-panel {
   border: 1px solid var(--color-border); border-radius: var(--radius-lg);
@@ -1839,6 +1840,47 @@ tr:hover td { background: var(--color-bg-hover); }
 .scan-field { display: grid; gap: var(--space-3); }
 .scan-field input { min-height: 54px; font-size: var(--text-lg); }
 .logs-table table { min-width: 1080px; }
+
+/* --------------------------------------------------------------------------
+   18.5 Modal & Secondary Password
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  background: var(--color-bg-raised);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  width: 90%; max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.modal-card h2 { margin: 0 0 var(--space-2); font-size: var(--text-xl); }
+.modal-description { color: var(--color-text-secondary); font-size: var(--text-sm); margin: 0 0 var(--space-5); }
+.modal-actions { display: flex; gap: var(--space-3); justify-content: flex-end; margin-top: var(--space-4); }
+
+.secondary-password-setting {
+  display: grid; gap: var(--space-4);
+}
+
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.setting-row strong { font-size: var(--text-base); }
+.setting-row small { color: var(--color-text-secondary); font-size: var(--text-sm); display: block; margin-top: 2px; }
+
+.setting-form {
+  padding: var(--space-4);
+  background: var(--color-bg-overlay);
+  border-radius: var(--radius-md);
+}
 
 /* --------------------------------------------------------------------------
    19. Mobile — MiMo 浅色移动端

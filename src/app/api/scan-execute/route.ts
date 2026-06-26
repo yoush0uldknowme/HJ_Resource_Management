@@ -206,6 +206,15 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // 校验申请人身份 — 只有申请人本人才能执行自己的出库申请
+      if (approvedRequest.requesterId !== user.id) {
+        return NextResponse.json({
+          ok: false,
+          motorCode: motor.motorCode,
+          message: `该出库申请不属于您，无法执行出库`
+        }, { status: 403 });
+      }
+
       const next = applyOutbound(
         { status: motor.status, currentLocation: motor.currentLocation },
         {

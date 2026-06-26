@@ -29,7 +29,13 @@ export function emitNewRequest(data: EventData): void {
     try {
       listener(data);
     } catch {
+      // 调用失败说明 listener 已失效（连接异常断开），立即清理
       listeners.delete(listener);
     }
   }
+}
+
+/** 获取当前活跃监听器数量，用于调试和连接数限制 */
+export function getListenerCount(): number {
+  return listeners.size;
 }

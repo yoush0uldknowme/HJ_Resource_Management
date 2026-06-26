@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "User" (
   "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   "username" TEXT NOT NULL,
   "passwordHash" TEXT NOT NULL,
+  "secondaryPasswordHash" TEXT,
   "role" TEXT NOT NULL,
   "isActive" BOOLEAN NOT NULL DEFAULT true,
   "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS "MotorPhoto" (
 
 CREATE TABLE IF NOT EXISTS "MotorTransaction" (
   "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  "motorId" INTEGER NOT NULL,
+  "motorId" INTEGER,
   "transactionType" TEXT NOT NULL,
   "operator" TEXT NOT NULL,
   "targetPerson" TEXT,

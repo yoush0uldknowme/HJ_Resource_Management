@@ -23,9 +23,8 @@ export default async function LoginPage({
 
   const isOperator = mode === "operator";
   const title = isOperator ? "用户端登录" : "管理端登录";
-  const hint = isOperator ? "默认操作员账号：operator / operator123" : "默认管理员账号：admin / admin123";
+  const hint = isOperator ? "请使用操作员账号登录" : "请使用管理员账号登录";
   const defaultUsername = isOperator ? "operator" : "admin";
-  const defaultPassword = isOperator ? "operator123" : "admin123";
   const operatorNext = redirectTo ?? "/user";
   const adminNext = redirectTo ?? "/admin";
 
@@ -79,7 +78,7 @@ export default async function LoginPage({
           </div>
           <div className="field">
             <label htmlFor="password">密码</label>
-            <input id="password" name="password" type="password" required defaultValue={defaultPassword} />
+            <input id="password" name="password" type="password" required />
           </div>
           {isPermError
             ? <p className="error">权限不足，请使用操作员(operator)或管理员(admin)账号登录。</p>

@@ -1,9 +1,14 @@
 import { NextRequest } from "next/server";
 import { getCurrentUser, isAdmin } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
-import { subscribeToNewRequests, unsubscribeListener } from "@/lib/events";
+import { getListenerCount, subscribeToNewRequests, unsubscribeListener } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
+
+// 最大 SSE 连接数限制，防止耗尽数据库连接池
+const MAX_SSE_CONNECTIONS = 10;
+// 连接超时：5 分钟后自动关闭，防止僵尸连接
+const CONNECTION_TIMEOUT_MS = 5 * 60 * 1000;
 
 /**
  * SSE 接口：管理员订阅新出库申请通知
@@ -15,12 +20,24 @@ export async function GET(request: NextRequest) {
     return new Response("Unauthorized", { status: 401 });
   }
 
+  // 连接数限制：防止耗尽资源
+  if (getListenerCount() >= MAX_SSE_CONNECTIONS) {
+    return new Response("Too many SSE connections", { status: 429 });
+  }
+
   const stream = new ReadableStream({
     start(controller) {
       // 发送初始连接确认
       const encoder = new TextEncoder();
       const send = (data: unknown) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        } catch {
+          // stream 已关闭，清理 listener
+          unsubscribeListener(listener);
+          clearInterval(heartbeat);
+          clearTimeout(timeout);
+        }
       };
 
       // 先发送当前待审批数量
@@ -28,6 +45,9 @@ export async function GET(request: NextRequest) {
         .count({ where: { status: "pending" } })
         .then((count) => {
           send({ type: "initial", pendingCount: count });
+        })
+        .catch(() => {
+          // 数据库查询失败，仍保持 SSE 连接
         });
 
       // 订阅新申请事件
@@ -40,12 +60,27 @@ export async function GET(request: NextRequest) {
           controller.enqueue(encoder.encode(`: heartbeat\n\n`));
         } catch {
           clearInterval(heartbeat);
+          clearTimeout(timeout);
+          unsubscribeListener(listener);
         }
       }, 30000);
+
+      // 连接超时：5 分钟后自动关闭
+      const timeout = setTimeout(() => {
+        clearInterval(heartbeat);
+        unsubscribeListener(listener);
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "timeout" })}\n\n`));
+          controller.close();
+        } catch {
+          // 已关闭
+        }
+      }, CONNECTION_TIMEOUT_MS);
 
       // 客户端断开时清理
       request.signal.addEventListener("abort", () => {
         clearInterval(heartbeat);
+        clearTimeout(timeout);
         unsubscribeListener(listener);
         try {
           controller.close();

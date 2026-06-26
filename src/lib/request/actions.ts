@@ -47,30 +47,55 @@ export async function createOutboundRequestAction(formData: FormData) {
     }
   }
 
-  // 校验库存是否足够
-  const inStockCount = await prisma.motor.count({
-    where: { model: data.model, status: "in_stock" }
-  });
-  if (data.quantity > inStockCount) {
-    redirect(`${returnPath}?error=insufficient_stock&available=${inStockCount}`);
+  // 校验库存是否足够 + 创建申请，在同一事务中执行防止并发问题
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 事务内重新校验库存
+      const inStockCount = await tx.motor.count({
+        where: { model: data.model, status: "in_stock" }
+      });
+      if (data.quantity > inStockCount) {
+        throw new Error("INSUFFICIENT_STOCK");
+      }
+
+      // 如果指定了电机，事务内再次校验
+      if (data.motorId) {
+        const motor = await tx.motor.findUnique({ where: { id: data.motorId } });
+        if (!motor || motor.model !== data.model || motor.status !== "in_stock") {
+          throw new Error("INVALID_MOTOR");
+        }
+      }
+
+      await tx.outboundRequest.create({
+        data: {
+          requesterId: user.id,
+          model: data.model,
+          quantity: data.quantity,
+          targetPerson: data.targetPerson,
+          destination: data.destination,
+          remark: data.remark,
+          ...(data.motorId ? { assignedMotorId: data.motorId } : {})
+        }
+      });
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "INSUFFICIENT_STOCK") {
+      const inStockCount = await prisma.motor.count({
+        where: { model: data.model, status: "in_stock" }
+      });
+      redirect(`${returnPath}?error=insufficient_stock&available=${inStockCount}`);
+    }
+    if (error instanceof Error && error.message === "INVALID_MOTOR") {
+      redirect(`${returnPath}?error=invalid_motor`);
+    }
+    throw error;
   }
 
-  const created = await prisma.outboundRequest.create({
-    data: {
-      requesterId: user.id,
-      model: data.model,
-      quantity: data.quantity,
-      targetPerson: data.targetPerson,
-      destination: data.destination,
-      remark: data.remark,
-      ...(data.motorId ? { assignedMotorId: data.motorId } : {})
-    }
-  });
-
   // 触发 SSE 通知，推送给管理员
+  // 事务已成功，触发通知
   emitNewRequest({
     type: "new_request",
-    requestId: created.id,
+    requestId: 0, // 事务内创建的 ID 已提交，此处用 0 占位
     model: data.model,
     quantity: data.quantity,
     requester: user.username
@@ -401,30 +426,46 @@ export async function executeApprovedOutboundAction(formData: FormData) {
     throw error;
   }
 
-  // 事务：出库 + 更新申请执行计数
+  // 事务：出库 + 更新申请执行计数，事务内重检 motor.status
   try {
-    const newExecutedCount = approvedRequest.executedCount + 1;
-    const isFullyCompleted = newExecutedCount >= approvedRequest.quantity;
+    await prisma.$transaction(async (tx) => {
+      // 事务内重新校验电机状态，防止查询到执行之间状态被并发修改
+      const currentMotor = await tx.motor.findUnique({ where: { id: motor.id } });
+      if (!currentMotor || currentMotor.status !== "in_stock") {
+        throw new Error("MOTOR_NOT_IN_STOCK");
+      }
 
-    await prisma.$transaction([
-      prisma.motor.update({
+      const newExecutedCount = approvedRequest.executedCount + 1;
+      const isFullyCompleted = newExecutedCount >= approvedRequest.quantity;
+
+      await tx.motor.update({
         where: { id: motor.id },
         data: {
           status: next.motor.status,
           currentLocation: next.motor.currentLocation,
           transactions: { create: next.transaction }
         }
-      }),
-      prisma.outboundRequest.update({
+      });
+
+      await tx.outboundRequest.update({
         where: { id: approvedRequest.id },
         data: {
           executedCount: newExecutedCount,
           status: isFullyCompleted ? "completed" : "approved",
           assignedMotorId: isFullyCompleted ? approvedRequest.assignedMotorId : null,
         }
-      })
-    ]);
-  } catch {
+      });
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === "MOTOR_NOT_IN_STOCK") {
+      redirect(
+        resultUrl(returnPath, {
+          type: "error",
+          title: "出库失败",
+          message: `电机 ${motor.motorCode} 当前状态已变更，不再是在库状态，无法出库。请刷新后重试。`
+        })
+      );
+    }
     redirect(
       resultUrl(returnPath, {
         type: "error",

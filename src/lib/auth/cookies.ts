@@ -41,7 +41,16 @@ export async function verifyToken(token: string): Promise<CurrentUser | null> {
 }
 
 function cookieOptions() {
-  return { httpOnly: true, path: "/", maxAge: 60 * 60 * 10 } as const; // 10 hours
+  return {
+    httpOnly: true,
+    path: "/",
+    maxAge: 60 * 60 * 10, // 10 hours
+    sameSite: "lax" as const,
+    // HTTPS 开发服务器使用自签名证书，浏览器可能不信任，
+    // secure 在非 HTTPS 环境下会导致 cookie 无法设置，
+    // 因此仅在生产环境启用 secure
+    ...(process.env.NODE_ENV === "production" ? { secure: true as const } : {})
+  };
 }
 
 export async function setCookieValue(token: string) {

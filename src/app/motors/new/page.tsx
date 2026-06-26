@@ -11,7 +11,7 @@ export default async function NewMotorPage() {
           <p>系统会按型号自动生成编号（如 GM6020-0001）。</p>
         </div>
       </div>
-      <form className="panel form" action={createMotorAction} encType="multipart/form-data">
+      <form className="panel form" action={createMotorAction}>
         <div className="form-grid">
           <div className="field"><label htmlFor="name">电机名称</label><input id="name" name="name" required placeholder="例如 GM6020 电机" /></div>
           <div className="field"><label htmlFor="model">型号</label><input id="model" name="model" required placeholder="例如 GM6020" /></div>

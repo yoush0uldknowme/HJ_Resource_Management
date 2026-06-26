@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  username     String   @unique
-  passwordHash String
-  role         String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  id                   Int      @id @default(autoincrement())
+  username             String   @unique
+  passwordHash         String
+  secondaryPasswordHash String? // 二级密码哈希（用于删除电机、删除日志等高危操作验证）
+  role                 String
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
   outboundRequests OutboundRequest[]
 }
 

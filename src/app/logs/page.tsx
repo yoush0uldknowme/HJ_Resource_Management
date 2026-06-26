@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
-import { clearLogsAction, deleteLogAction } from "@/lib/log/actions";
+import { DeleteLogButton, ClearLogsButton } from "@/components/delete-log-buttons";
 import { requireAdmin } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { transactionLabel } from "@/lib/motor/status";
@@ -19,14 +18,10 @@ export default async function LogsPage() {
       <div className="page-head">
         <div>
           <h1>操作记录</h1>
-          <p>记录建档、入库和出库操作。日志删除仅对管理员开放。</p>
+          <p>记录建档、入库和出库操作。删除日志需要二级密码验证。</p>
         </div>
         {logs.length ? (
-          <form action={clearLogsAction}>
-            <ConfirmSubmitButton message="确定清空全部操作日志吗？此操作无法撤销。">
-              清空全部日志
-            </ConfirmSubmitButton>
-          </form>
+          <ClearLogsButton />
         ) : null}
       </div>
 
@@ -61,12 +56,10 @@ export default async function LogsPage() {
                 <td>{log.location ?? "-"}</td>
                 <td>{log.remark ?? "-"}</td>
                 <td>
-                  <form action={deleteLogAction}>
-                    <input name="id" type="hidden" value={log.id} />
-                    <ConfirmSubmitButton message={`确定删除 ${log.motor ? log.motor.motorCode : "已删除"} 的这条日志吗？`}>
-                      删除
-                    </ConfirmSubmitButton>
-                  </form>
+                  <DeleteLogButton
+                    logId={log.id}
+                    motorCode={log.motor ? log.motor.motorCode : "已删除"}
+                  />
                 </td>
               </tr>
             ))}

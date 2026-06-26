@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 import { motorStatusLabel } from "@/lib/motor/status";
+import { SecondaryPasswordSetting } from "@/components/secondary-password-modal";
 
 export default async function AdminPage() {
   await requireAdmin();
@@ -54,6 +55,11 @@ export default async function AdminPage() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="panel settings-panel">
+        <div className="section-head"><div><h2>安全设置</h2><p>管理端高危操作的安全配置。</p></div></div>
+        <SecondaryPasswordSetting />
       </section>
     </div>
   );

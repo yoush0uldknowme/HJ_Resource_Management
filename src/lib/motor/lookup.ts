@@ -1,11 +1,15 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
+/** Prisma 客户端或事务客户端的通用类型 */
+type PrismaOrTx = PrismaClient | Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends">;
+
 /**
  * 按扫码编码查找电机（轻量版，不含 photos）。
  * 用于出入库等不需要照片的场景。
+ * 支持事务客户端和普通 PrismaClient。
  */
 export async function findMotorByCode(
-  prisma: PrismaClient,
+  prisma: PrismaOrTx,
   scannedCode: string
 ): Promise<Prisma.MotorGetPayload<{ include: { photos: false } }> | null> {
   const code = scannedCode.trim();

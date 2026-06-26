@@ -18,7 +18,7 @@ export default async function InboundPage({
       <div className="page-head">
         <div>
           <h1>电机入库 / 归还</h1>
-          <p>输入电机的八位编号，将电机状态更新为在库。</p>
+          <p>输入电机编号（如 GM6020-0001），将电机状态更新为在库。</p>
         </div>
       </div>
       <ResultPanel result={result} />

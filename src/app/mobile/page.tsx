@@ -30,7 +30,7 @@ export default async function MobileHomePage() {
           <span>01</span><strong>电机列表</strong><small>查看型号和状态</small>
         </Link>
         <Link className="mobile-quick-card" href="/mobile/scan">
-          <span>02</span><strong>编号查询</strong><small>输入八位编号</small>
+          <span>02</span><strong>编号查询</strong><small>输入电机编号</small>
         </Link>
         <Link className="mobile-quick-card" href="/mobile/inbound">
           <span>03</span><strong>入库 / 归还</strong><small>更新为在库状态</small>

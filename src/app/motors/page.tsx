@@ -128,7 +128,7 @@ export default async function MotorsPage({
               </span>
             </div>
             <div className="model-motor-list">
-              {group.items.slice(0, 5).map((motor) => (
+              {group.items.map((motor) => (
                 <Link className="model-motor-row" href={`/motors/${motor.id}`} key={motor.id}>
                   {motor.photos[0] ? (
                     <Image

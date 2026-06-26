@@ -32,6 +32,7 @@ const updateMotorSchema = z.object({
   id: z.coerce.number().int().positive(),
   name: z.string().min(1),
   model: z.string().min(1),
+  snCode: z.string().optional(),
   remark: z.string().optional()
 });
 
@@ -130,14 +131,36 @@ export async function updateMotorAction(formData: FormData) {
     id: formData.get("id"),
     name: formData.get("name"),
     model: formData.get("model"),
+    snCode: formData.get("snCode") || undefined,
     remark: formData.get("remark") || undefined
   });
+
+  // SN 码唯一性校验：如果提供了新的 SN 码，检查是否与其他电机重复
+  if (parsed.snCode && parsed.snCode.trim()) {
+    const normalizedSn = parsed.snCode.trim();
+    const conflictingMotor = await prisma.motor.findFirst({
+      where: {
+        snCode: normalizedSn,
+        id: { not: parsed.id } // 排除自身
+      }
+    });
+    if (conflictingMotor) {
+      redirect(
+        resultUrl(`/motors/${parsed.id}/edit`, {
+          type: "error",
+          title: "SN 码重复",
+          message: `SN 码 "${normalizedSn}" 已被电机 ${conflictingMotor.motorCode} 使用，无法重复分配。`
+        })
+      );
+    }
+  }
 
   await prisma.motor.update({
     where: { id: parsed.id },
     data: {
       name: parsed.name,
       model: parsed.model,
+      snCode: parsed.snCode?.trim() || null,
       remark: parsed.remark
     }
   });
@@ -147,16 +170,8 @@ export async function updateMotorAction(formData: FormData) {
   redirect(`/motors/${parsed.id}`);
 }
 
-export async function deleteMotorAction(formData: FormData) {
-  await requireAdmin();
-  const id = z.coerce.number().int().positive().parse(formData.get("id"));
-
-  await prisma.motor.delete({ where: { id } });
-
-  revalidatePath("/motors");
-  revalidatePath("/logs");
-  redirect("/motors");
-}
+// deleteMotorAction 已迁移到 /api/delete-motor（需要二级密码验证）
+// 旧的 deleteMotorAction 不再使用，保留为空以防旧代码引用
 
 // ── 入库 ──
 
@@ -392,71 +407,56 @@ export async function batchInboundMotorAction(formData: FormData) {
     );
   }
 
-  // 先校验所有电机，收集合法的入库操作
-  const updates: {
-    motorId: number;
-    transaction: TransactionDraft;
-    motorSnapshot: MotorSnapshot;
-    motorCode: string;
-  }[] = [];
+  // 在事务内校验并执行，消除竞态窗口
+  // 先预解析编号（仅字符串操作，不涉及数据库）
+  const codeList = codes;
   const failed: { code: string; reason: string }[] = [];
+  const succeeded: string[] = [];
 
-  for (const code of codes) {
-    try {
-      const motor = await findMotorByCode(prisma, code);
-      if (!motor) {
-        failed.push({ code, reason: "未找到电机" });
-        continue;
-      }
+  const result = await prisma.$transaction(async (tx) => {
+    for (const code of codeList) {
+      try {
+        // 事务内重新查找电机，确保读取最新状态
+        const motor = await findMotorByCode(tx, code);
+        if (!motor) {
+          failed.push({ code, reason: "未找到电机" });
+          continue;
+        }
 
-      const next = applyInbound(
-        { status: motor.status, currentLocation: motor.currentLocation },
-        { operator: user.username, remark }
-      );
+        const next = applyInbound(
+          { status: motor.status, currentLocation: motor.currentLocation },
+          { operator: user.username, remark }
+        );
 
-      updates.push({
-        motorId: motor.id,
-        transaction: next.transaction,
-        motorSnapshot: next.motor,
-        motorCode: motor.motorCode
-      });
-    } catch (error) {
-      const reason =
-        error instanceof MotorFlowError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "未知错误";
-      failed.push({ code, reason });
-    }
-  }
-
-  // 使用事务批量执行
-  if (updates.length > 0) {
-    await prisma.$transaction(
-      updates.map((item) =>
-        prisma.motor.update({
-          where: { id: item.motorId },
+        await tx.motor.update({
+          where: { id: motor.id },
           data: {
-            status: item.motorSnapshot.status,
-            currentLocation: item.motorSnapshot.currentLocation,
-            transactions: { create: item.transaction }
+            status: next.motor.status,
+            currentLocation: next.motor.currentLocation,
+            transactions: { create: next.transaction }
           }
-        })
-      )
-    );
-  }
+        });
+
+        succeeded.push(motor.motorCode);
+      } catch (error) {
+        const reason =
+          error instanceof MotorFlowError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : "未知错误";
+        failed.push({ code, reason });
+      }
+    }
+    return { succeeded, failed };
+  });
 
   // 统一刷新路径
   revalidatePath("/motors");
   revalidatePath("/logs");
-  for (const item of updates) {
-    revalidatePath(`/motors/${item.motorId}`);
-  }
 
-  const succeeded = updates.map((u) => u.motorCode);
-  const successCount = succeeded.length;
-  const failedCount = failed.length;
+  const successCount = result.succeeded.length;
+  const failedCount = result.failed.length;
 
   let title: string;
   let message: string;
@@ -464,7 +464,7 @@ export async function batchInboundMotorAction(formData: FormData) {
 
   if (failedCount === 0) {
     title = "批量入库完成";
-    message = `全部 ${successCount} 台电机已成功入库：${succeeded.join("、")}。`;
+    message = `全部 ${successCount} 台电机已成功入库：${result.succeeded.join("、")}。`;
     type = "success";
   } else if (successCount === 0) {
     title = "批量入库失败";
@@ -472,7 +472,7 @@ export async function batchInboundMotorAction(formData: FormData) {
     type = "error";
   } else {
     title = "批量入库部分成功";
-    message = `成功 ${successCount} 台：${succeeded.join("、")}。失败 ${failedCount} 台：${failed
+    message = `成功 ${successCount} 台：${result.succeeded.join("、")}。失败 ${failedCount} 台：${result.failed
       .map((f) => `${f.code}(${f.reason})`)
       .join("、")}。`;
     type = "success";
@@ -526,71 +526,55 @@ export async function batchOutboundMotorAction(formData: FormData) {
     );
   }
 
-  // 先校验所有电机，收集合法的出库操作
-  const updates: {
-    motorId: number;
-    transaction: TransactionDraft;
-    motorSnapshot: MotorSnapshot;
-    motorCode: string;
-  }[] = [];
+  // 在事务内校验并执行，消除竞态窗口
+  const codeList = codes;
   const failed: { code: string; reason: string }[] = [];
+  const succeeded: string[] = [];
 
-  for (const code of codes) {
-    try {
-      const motor = await findMotorByCode(prisma, code);
-      if (!motor) {
-        failed.push({ code, reason: "未找到电机" });
-        continue;
-      }
+  const result = await prisma.$transaction(async (tx) => {
+    for (const code of codeList) {
+      try {
+        // 事务内重新查找电机，确保读取最新状态
+        const motor = await findMotorByCode(tx, code);
+        if (!motor) {
+          failed.push({ code, reason: "未找到电机" });
+          continue;
+        }
 
-      const next = applyOutbound(
-        { status: motor.status, currentLocation: motor.currentLocation },
-        { operator: user.username, issuedBy, vehicle, remark }
-      );
+        const next = applyOutbound(
+          { status: motor.status, currentLocation: motor.currentLocation },
+          { operator: user.username, issuedBy, vehicle, remark }
+        );
 
-      updates.push({
-        motorId: motor.id,
-        transaction: next.transaction,
-        motorSnapshot: next.motor,
-        motorCode: motor.motorCode
-      });
-    } catch (error) {
-      const reason =
-        error instanceof MotorFlowError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "未知错误";
-      failed.push({ code, reason });
-    }
-  }
-
-  // 使用事务批量执行
-  if (updates.length > 0) {
-    await prisma.$transaction(
-      updates.map((item) =>
-        prisma.motor.update({
-          where: { id: item.motorId },
+        await tx.motor.update({
+          where: { id: motor.id },
           data: {
-            status: item.motorSnapshot.status,
-            currentLocation: item.motorSnapshot.currentLocation,
-            transactions: { create: item.transaction }
+            status: next.motor.status,
+            currentLocation: next.motor.currentLocation,
+            transactions: { create: next.transaction }
           }
-        })
-      )
-    );
-  }
+        });
+
+        succeeded.push(motor.motorCode);
+      } catch (error) {
+        const reason =
+          error instanceof MotorFlowError
+            ? error.message
+            : error instanceof Error
+              ? error.message
+              : "未知错误";
+        failed.push({ code, reason });
+      }
+    }
+    return { succeeded, failed };
+  });
 
   // 统一刷新路径
   revalidatePath("/motors");
   revalidatePath("/logs");
-  for (const item of updates) {
-    revalidatePath(`/motors/${item.motorId}`);
-  }
 
-  const succeeded = updates.map((u) => u.motorCode);
-  const successCount = succeeded.length;
-  const failedCount = failed.length;
+  const successCount = result.succeeded.length;
+  const failedCount = result.failed.length;
 
   let title: string;
   let message: string;
@@ -606,7 +590,7 @@ export async function batchOutboundMotorAction(formData: FormData) {
     type = "error";
   } else {
     title = "批量出库部分成功";
-    message = `成功 ${successCount} 台：${succeeded.join("、")}。失败 ${failedCount} 台：${failed
+    message = `成功 ${successCount} 台：${result.succeeded.join("、")}。失败 ${failedCount} 台：${result.failed
       .map((f) => `${f.code}(${f.reason})`)
       .join("、")}。`;
     type = "success";

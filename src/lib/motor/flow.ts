@@ -77,7 +77,7 @@ export function applyOutbound(
 // ── 公共出库执行 ──
 
 /**
- * 执行电机出库的数据库操作（公共函数，供直接出库和审批后出库复用）。
+ * 执行电机出入库的数据库操作（公共函数，供入库和出库复用）。
  * 使用事务确保数据一致性。
  */
 export async function executeMotorOutbound(
@@ -87,13 +87,37 @@ export async function executeMotorOutbound(
   motorUpdate: MotorSnapshot,
   paths: string[]
 ): Promise<void> {
-  await db.motor.update({
-    where: { id: motorId },
-    data: {
-      status: motorUpdate.status,
-      currentLocation: motorUpdate.currentLocation,
-      transactions: { create: transaction }
+  await db.$transaction(async (tx) => {
+    // 事务内校验电机状态，防止并发修改
+    const currentMotor = await tx.motor.findUnique({ where: { id: motorId } });
+    if (!currentMotor) {
+      throw new MotorFlowError("电机不存在", "MOTOR_NOT_FOUND");
     }
+
+    // 状态校验：确保电机当前状态仍然允许该操作
+    // 入库时：必须是 checked_out 或 draft
+    // 出库时：必须是 in_stock
+    if (transaction.transactionType === "inbound") {
+      if (!ALLOWED_INBOUND_STATUSES.has(currentMotor.status)) {
+        throw new MotorFlowError(
+          `当前状态为 ${currentMotor.status}，不允许入库`,
+          "INBOUND_NOT_ALLOWED"
+        );
+      }
+    } else if (transaction.transactionType === "outbound") {
+      if (currentMotor.status !== "in_stock") {
+        throw new MotorFlowError("只有在库电机可以出库", "OUTBOUND_NOT_IN_STOCK");
+      }
+    }
+
+    await tx.motor.update({
+      where: { id: motorId },
+      data: {
+        status: motorUpdate.status,
+        currentLocation: motorUpdate.currentLocation,
+        transactions: { create: transaction }
+      }
+    });
   });
 
   for (const p of paths) {

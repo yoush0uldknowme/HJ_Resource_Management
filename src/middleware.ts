@@ -29,7 +29,9 @@ export function middleware(request: NextRequest) {
   response.cookies.set("hj_token", token, {
     httpOnly: true,
     path: "/",
-    maxAge: 60 * 60 * 10 // 10 hours
+    maxAge: 60 * 60 * 10, // 10 hours
+    sameSite: "lax",
+    ...(process.env.NODE_ENV === "production" ? { secure: true } : {})
   });
 
   return response;
