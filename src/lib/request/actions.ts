@@ -398,30 +398,6 @@ export async function cancelApprovalAction(formData: FormData) {
   redirect("/admin/requests?cancelled=1");
 }
 
-// ── 删除申请记录 ──
-
-export async function deleteRequestAction(formData: FormData) {
-  const admin = await requireAdmin();
-  const requestId = z.coerce.number().int().positive().parse(formData.get("requestId"));
-
-  const request = await prisma.outboundRequest.findUnique({ where: { id: requestId } });
-  if (!request) {
-    redirect("/admin/requests?error=not_found");
-  }
-
-  // 不允许删除 pending 状态的申请（pending 应走审批/拒绝流程）
-  if (request.status === "pending") {
-    redirect("/admin/requests?error=cannot_delete_pending");
-  }
-
-  await prisma.outboundRequest.delete({ where: { id: requestId } });
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/requests");
-  revalidatePath("/requests");
-  redirect("/admin/requests?deleted=1");
-}
-
 // ── 执行已审批出库（现场扫码）──
 
 export async function executeApprovedOutboundAction(formData: FormData) {

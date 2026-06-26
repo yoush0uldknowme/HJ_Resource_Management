@@ -170,9 +170,6 @@ export async function updateMotorAction(formData: FormData) {
   redirect(`/motors/${parsed.id}`);
 }
 
-// deleteMotorAction 已迁移到 /api/delete-motor（需要二级密码验证）
-// 旧的 deleteMotorAction 不再使用，保留为空以防旧代码引用
-
 // ── 入库 ──
 
 async function performInbound(formData: FormData, returnPath: string) {

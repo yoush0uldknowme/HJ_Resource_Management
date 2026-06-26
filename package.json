@@ -17,7 +17,6 @@
     "@prisma/client": "^6.8.2",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
-    "html5-qrcode": "^2.3.8",
     "next": "^15.3.2",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.4",
