@@ -50,11 +50,22 @@ export async function createOutboundRequestAction(formData: FormData) {
   // 校验库存是否足够 + 创建申请，在同一事务中执行防止并发问题
   try {
     await prisma.$transaction(async (tx) => {
-      // 事务内重新校验库存
+      // 事务内校验库存（扣除已审批未执行的数量）
       const inStockCount = await tx.motor.count({
         where: { model: data.model, status: "in_stock" }
       });
-      if (data.quantity > inStockCount) {
+
+      // 计算已审批但未完全执行的数量（已被别的申请预占的库存）
+      const approvedRequests = await tx.outboundRequest.findMany({
+        where: { model: data.model, status: "approved" },
+        select: { quantity: true, executedCount: true }
+      });
+      const reservedCount = approvedRequests.reduce(
+        (sum, req) => sum + (req.quantity - req.executedCount), 0
+      );
+      const availableCount = inStockCount - reservedCount;
+
+      if (data.quantity > availableCount) {
         throw new Error("INSUFFICIENT_STOCK");
       }
 
@@ -83,7 +94,17 @@ export async function createOutboundRequestAction(formData: FormData) {
       const inStockCount = await prisma.motor.count({
         where: { model: data.model, status: "in_stock" }
       });
-      redirect(`${returnPath}?error=insufficient_stock&available=${inStockCount}`);
+      const approvedRequests = await prisma.outboundRequest.findMany({
+        where: { model: data.model, status: "approved" },
+        select: { quantity: true, executedCount: true }
+      });
+      const reservedCount = approvedRequests.reduce(
+        (sum, req) => sum + (req.quantity - req.executedCount), 0
+      );
+      const availableCount = inStockCount - reservedCount;
+      redirect(
+        `${returnPath}?error=insufficient_stock&available=${availableCount}&total=${inStockCount}&reserved=${reservedCount}`
+      );
     }
     if (error instanceof Error && error.message === "INVALID_MOTOR") {
       redirect(`${returnPath}?error=invalid_motor`);
@@ -140,12 +161,21 @@ export async function batchCreateOutboundRequestAction(formData: FormData) {
       const qty = parseInt(String(quantities[i] ?? "1"), 10) || 1;
       if (!model || qty < 1) continue;
 
-      // 检查库存是否足够
+      // 检查库存是否足够（扣除已审批未执行的预占数量）
       const stockCount = await prisma.motor.count({
         where: { model, status: "in_stock" }
       });
-      if (stockCount < qty) {
-        failed.push({ code: `${model} x${qty}`, reason: `库存仅 ${stockCount} 台，不足 ${qty} 台` });
+      const approvedReqs = await prisma.outboundRequest.findMany({
+        where: { model, status: "approved" },
+        select: { quantity: true, executedCount: true }
+      });
+      const reserved = approvedReqs.reduce((sum, r) => sum + (r.quantity - r.executedCount), 0);
+      const available = stockCount - reserved;
+      if (available < qty) {
+        failed.push({
+          code: `${model} x${qty}`,
+          reason: `可用库存 ${available} 台（在库 ${stockCount}，已预占 ${reserved}），不足 ${qty} 台`
+        });
         continue;
       }
 
@@ -329,6 +359,67 @@ export async function rejectOutboundRequestAction(formData: FormData) {
   revalidatePath("/admin/requests");
   revalidatePath("/requests");
   redirect("/admin/requests?rejected=1");
+}
+
+// ── 撤销审批（已批准 → 待审批）──
+// 仅允许 executedCount=0 的申请撤销（已执行过出库的不能撤销，会破坏数量记录）
+
+export async function cancelApprovalAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const requestId = z.coerce.number().int().positive().parse(formData.get("requestId"));
+
+  const request = await prisma.outboundRequest.findUnique({ where: { id: requestId } });
+  if (!request) {
+    redirect("/admin/requests?error=not_found");
+  }
+
+  if (request.status !== "approved") {
+    redirect("/admin/requests?error=cancel_failed");
+  }
+
+  if (request.executedCount > 0) {
+    redirect("/admin/requests?error=already_executed&count=" + request.executedCount);
+  }
+
+  await prisma.outboundRequest.update({
+    where: { id: requestId },
+    data: {
+      status: "pending",
+      assignedMotorId: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      reviewRemark: null
+    }
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/requests");
+  revalidatePath("/requests");
+  redirect("/admin/requests?cancelled=1");
+}
+
+// ── 删除申请记录 ──
+
+export async function deleteRequestAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const requestId = z.coerce.number().int().positive().parse(formData.get("requestId"));
+
+  const request = await prisma.outboundRequest.findUnique({ where: { id: requestId } });
+  if (!request) {
+    redirect("/admin/requests?error=not_found");
+  }
+
+  // 不允许删除 pending 状态的申请（pending 应走审批/拒绝流程）
+  if (request.status === "pending") {
+    redirect("/admin/requests?error=cannot_delete_pending");
+  }
+
+  await prisma.outboundRequest.delete({ where: { id: requestId } });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/requests");
+  revalidatePath("/requests");
+  redirect("/admin/requests?deleted=1");
 }
 
 // ── 执行已审批出库（现场扫码）──

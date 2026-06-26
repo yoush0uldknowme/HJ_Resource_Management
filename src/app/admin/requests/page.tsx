@@ -1,11 +1,12 @@
-import { approveOutboundRequestAction, rejectOutboundRequestAction } from "@/lib/request/actions";
+import { approveOutboundRequestAction, rejectOutboundRequestAction, cancelApprovalAction } from "@/lib/request/actions";
+import { DeleteRequestButton } from "@/components/delete-request-button";
 import { requireAdmin } from "@/lib/auth/index";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminRequestsPage({
   searchParams
 }: {
-  searchParams: Promise<{ approved?: string; rejected?: string; error?: string }>;
+  searchParams: Promise<{ approved?: string; rejected?: string; cancelled?: string; deleted?: string; error?: string; count?: string }>;
 }) {
   await requireAdmin();
   const params = await searchParams;
@@ -35,7 +36,15 @@ export default async function AdminRequestsPage({
       </div>
       {params.approved ? <div className="result-panel success"><h2>审批完成</h2><p>已批准申请，请通知领用人前往手机端扫码出库。</p></div> : null}
       {params.rejected ? <div className="result-panel success"><h2>申请已拒绝</h2><p>申请人可在"我的申请"中查看审批意见。</p></div> : null}
-      {params.error ? <div className="result-panel error"><h2>无法批准</h2><p>所选电机可能已经出库、型号不匹配或不存在。</p></div> : null}
+      {params.cancelled ? <div className="result-panel success"><h2>已撤销审批</h2><p>该申请已退回待审批状态，可重新审批。</p></div> : null}
+      {params.deleted ? <div className="result-panel success"><h2>已删除</h2><p>该申请记录已从系统中移除。</p></div> : null}
+      {params.error ? <div className="result-panel error"><h2>操作失败</h2><p>{
+        params.error === "cancel_failed" ? "该申请已非已批准状态，无法撤销。" :
+        params.error === "already_executed" ? `已执行 ${params.count ?? "?"} 台出库，无法撤销审批。如需清理请删除。` :
+        params.error === "cannot_delete_pending" ? "不允许删除待审批的申请，请先拒绝再删除。" :
+        params.error === "not_found" ? "未找到该申请记录。" :
+        "所选电机可能已经出库、型号不匹配或不存在。"
+      }</p></div> : null}
 
       <section className="request-list">
         {[...requests].sort((a, b) => {
@@ -50,7 +59,12 @@ export default async function AdminRequestsPage({
               <div className="request-card-head">
                 <div>
                   <span>申请型号</span>
-                  <strong>{request.model} × {request.quantity}</strong>
+                  <strong>
+                    {request.model} × {request.quantity}
+                    {request.status === "approved" && request.executedCount > 0
+                      ? <span style={{ fontWeight: 400, fontSize: "0.85em", color: "#6B6B6B" }}>（已执行 {request.executedCount}/{request.quantity}）</span>
+                      : null}
+                  </strong>
                   <small>{request.requester.username} · {request.createdAt.toLocaleString("zh-CN")}</small>
                 </div>
                 <span className={`badge request-${request.status}`}>
@@ -105,7 +119,20 @@ export default async function AdminRequestsPage({
                     <button className="button danger" type="submit">拒绝申请</button>
                   </form>
                 </div>
-              ) : null}
+              ) : (
+                <div className="approval-actions">
+                  {request.status === "approved" && request.executedCount === 0 ? (
+                    <form action={cancelApprovalAction}>
+                      <input type="hidden" name="requestId" value={request.id} />
+                      <button className="button secondary" type="submit">撤销审批</button>
+                    </form>
+                  ) : null}
+                  {request.status === "approved" && request.executedCount > 0 ? (
+                    <p className="muted" style={{ fontSize: 13, margin: 0 }}>已执行 {request.executedCount}/{request.quantity} 台，无法撤销，可直接删除。</p>
+                  ) : null}
+                  <DeleteRequestButton requestId={request.id} model={request.model} quantity={request.quantity} />
+                </div>
+              )}
             </article>
           );
         })}
