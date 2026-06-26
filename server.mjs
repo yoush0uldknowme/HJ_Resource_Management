@@ -1,69 +1,93 @@
 /**
- * Next.js HTTPS 开发服务器
- * 用 Node.js 内建 crypto 生成自签名证书，让手机端能正常调用摄像头。
- * 使用: npm run dev
+ * HJ 资源管理系统 — 统一服务器入口
  *
- * ⚠️ NODE_TLS_REJECT_UNAUTHORIZED 仅在开发环境启用。
- * Next.js Server Action 内部会 fetch 自身的 HTTPS 地址，
- * 自签名证书会导致 DEPTH_ZERO_SELF_SIGNED_CERT 错误。
- * 生产环境应使用正规证书，不需要此设置。
+ * 双平台部署：
+ *   Windows: 自动生成自签名证书 → HTTPS://0.0.0.0:4011
+ *   Ubuntu:  设置 NO_HTTPS=1 → HTTP://127.0.0.1:4011（由 Caddy/Nginx 反向代理）
+ *
+ * 环境变量（可选）：
+ *   PORT      监听端口，默认 4011
+ *   HOST      监听地址，默认 0.0.0.0（Ubuntu 建议 127.0.0.1）
+ *   NO_HTTPS  设为 1 禁用 HTTPS（反向代理模式）
+ *   TLS_CERT  HTTPS 证书路径（不设置则自动生成自签名证书）
+ *   TLS_KEY   HTTPS 私钥路径
+ *   NODE_ENV  production 时禁用开发模式
+ *
+ * 使用:
+ *   node server.mjs                    # Windows HTTPS 模式
+ *   NO_HTTPS=1 node server.mjs          # Ubuntu 反向代理模式
  */
 
-import { createServer } from "node:https";
+import { createServer as createHttpServer } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
 import { parse } from "node:url";
+import { readFileSync } from "node:fs";
 import next from "next";
 import { generateCerts } from "./scripts/generate-certs.mjs";
 
-const PORT = 4011;
-const HOST = "0.0.0.0";
+const PORT = parseInt(process.env.PORT || "4011", 10);
+const HOST = process.env.HOST || "0.0.0.0";
+const NO_HTTPS = process.env.NO_HTTPS === "1";
 const dev = process.env.NODE_ENV !== "production";
 
-// 仅开发环境禁用 TLS 验证（自签名证书兼容）
-if (dev) {
+// 仅 Windows 自签证书开发环境禁用 TLS 验证
+if (dev && !NO_HTTPS) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
 const app = next({ dev, hostname: HOST, port: PORT });
 const handle = app.getRequestHandler();
 
-// 生成或读取自签名证书
-const { key, cert } = generateCerts();
-
 app.prepare().then(() => {
-  const server = createServer(
-    {
-      key,
-      cert,
-      minVersion: "TLSv1.2",
-    },
-    (req, res) => {
+  let server;
+
+  if (NO_HTTPS) {
+    // ── HTTP 纯文本模式（Ubuntu 反向代理） ──
+    server = createHttpServer((req, res) => {
       const parsedUrl = parse(req.url, true);
       handle(req, res, parsedUrl);
+    });
+  } else {
+    // ── HTTPS 模式（Windows 自签证书） ──
+    let key, cert;
+    if (process.env.TLS_CERT && process.env.TLS_KEY) {
+      key = readFileSync(process.env.TLS_KEY);
+      cert = readFileSync(process.env.TLS_CERT);
+    } else {
+      ({ key, cert } = generateCerts());
     }
-  );
+    server = createHttpsServer(
+      { key, cert, minVersion: "TLSv1.2" },
+      (req, res) => {
+        const parsedUrl = parse(req.url, true);
+        handle(req, res, parsedUrl);
+      }
+    );
+  }
 
   server.listen(PORT, HOST, (err) => {
     if (err) throw err;
+    const protocol = NO_HTTPS ? "HTTP" : "HTTPS";
     console.log("");
     console.log("════════════════════════════════════════════════");
-    console.log("  HTTPS 服务已启动");
-    console.log(`  桌面访问: https://localhost:${PORT}`);
-    console.log(`  手机访问: https://<你的电脑IP>:${PORT}`);
-    console.log("  (首次访问需点击「高级 → 继续前往」)");
+    console.log(`  HJ 资源管理系统已启动 (${protocol})`);
+    console.log(`  地址: ${protocol.toLowerCase()}://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`);
+    if (!NO_HTTPS) {
+      console.log("  首次访问需点击「高级 → 继续前往」");
+    }
     console.log("════════════════════════════════════════════════");
     console.log("");
   });
 
-  // 优雅关闭处理
+  // 优雅关闭
   const gracefulShutdown = (signal) => {
-    console.log(`\n收到 ${signal} 信号，开始优雅关闭...`);
+    console.log(`\n收到 ${signal} 信号，正在关闭...`);
     server.close(() => {
-      console.log("HTTPS 服务器已关闭");
+      console.log("服务器已关闭");
       process.exit(0);
     });
-    // 5 秒后强制退出，防止卡死
     setTimeout(() => {
-      console.log("优雅关闭超时，强制退出");
+      console.log("关闭超时，强制退出");
       process.exit(1);
     }, 5000);
   };

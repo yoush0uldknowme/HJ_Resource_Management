@@ -1,0 +1,26 @@
+# HJ 资源管理系统 — Caddy 反向代理配置
+# 部署到 Ubuntu 后，将此文件放在 /etc/caddy/Caddyfile 或 Caddy 配置目录中
+#
+# 用法：
+#   sudo caddy adapt --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy
+
+# 替换为你的域名或局域网 IP
+hj.example.com {
+	# 自动 HTTPS（Let's Encrypt），局域网 IP 会降级为 HTTP
+	reverse_proxy 127.0.0.1:4011
+
+	# 上传文件大小限制
+	request_body {
+		max_size 10MB
+	}
+
+	# 日志
+	log {
+		output file /var/log/caddy/hj-resource.log
+	}
+
+	# 静态文件缓存（上传图片）
+	@uploads path /uploads/*
+	header @uploads Cache-Control "public, max-age=86400"
+}

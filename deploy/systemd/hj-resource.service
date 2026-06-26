@@ -1,0 +1,32 @@
+[Unit]
+Description=HJ 资源管理系统
+Documentation=https://github.com/ysh0uldknowme/HJ_Resource_Management
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/hj-resource
+ExecStart=/usr/bin/node /opt/hj-resource/server.mjs
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=4011
+Environment=HOST=127.0.0.1
+
+# 安全加固
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/hj-resource/prisma /opt/hj-resource/public/uploads /opt/hj-resource/backups
+ReadOnlyPaths=/opt/hj-resource
+
+# 日志
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hj-resource
+
+[Install]
+WantedBy=multi-user.target

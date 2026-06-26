@@ -12,7 +12,12 @@ out/
 # local database and uploads
 prisma/dev.db
 prisma/dev.db-*
+prisma/prod.db
+prisma/prod.db-*
 public/uploads/
+
+# backups
+backups/
 
 # dev HTTPS certificates
 certificates/
