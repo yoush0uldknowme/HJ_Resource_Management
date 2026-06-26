@@ -50,4 +50,33 @@ describe("motor flow transitions", () => {
       )
     ).toThrow("只有在库电机可以出库");
   });
+
+  it("allows inbound from draft status (建档后首次入库)", () => {
+    const result = applyInbound(
+      { status: "draft", currentLocation: null },
+      { operator: "admin" }
+    );
+    expect(result.motor).toEqual({ status: "in_stock", currentLocation: "在库" });
+    expect(result.transaction.transactionType).toBe("inbound");
+  });
+
+  it("rejects inbound from in_stock (已在库)", () => {
+    expect(() =>
+      applyInbound(
+        { status: "in_stock", currentLocation: "A-01" },
+        { operator: "admin" }
+      )
+    ).toThrow("不允许入库");
+  });
+
+  it("outbound records targetPerson and vehicle in transaction", () => {
+    const result = applyOutbound(
+      { status: "in_stock", currentLocation: "A-01" },
+      { operator: "admin", issuedBy: "李四", vehicle: "步兵2号", remark: "测试出库" }
+    );
+    expect(result.motor.currentLocation).toBe("步兵2号");
+    expect(result.transaction.targetPerson).toBe("李四");
+    expect(result.transaction.purpose).toBe("步兵2号");
+    expect(result.transaction.remark).toBe("测试出库");
+  });
 });
