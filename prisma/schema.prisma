@@ -16,6 +16,7 @@ model User {
   isActive             Boolean  @default(true)
   createdAt            DateTime @default(now())
   outboundRequests OutboundRequest[]
+  libraryDocuments LibraryDocument[]
 }
 
 model Motor {
@@ -82,4 +83,78 @@ model MotorTransaction {
   deleted         Boolean  @default(false)
   deletedAt       DateTime?
   createdAt       DateTime @default(now())
+}
+
+// ── 资料库 ──
+
+model LibraryCategory {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  parentId    Int?
+  parent      LibraryCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    LibraryCategory[] @relation("CategoryTree")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  documents   LibraryDocument[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LibraryDocument {
+  id               Int      @id @default(autoincrement())
+  title            String
+  description      String?
+  originalFileName String
+  storedFileName   String
+  storagePath      String
+  fileExtension    String
+  mimeType         String
+  fileSize         Int
+  sha256           String
+  categoryId       Int
+  category         LibraryCategory @relation(fields: [categoryId], references: [id])
+  visibility       String   @default("all_members")
+  status           String   @default("active")
+  uploaderId       Int
+  uploader         User     @relation(fields: [uploaderId], references: [id], onDelete: Restrict)
+  tags             LibraryDocumentTag[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  archivedAt       DateTime?
+
+  @@index([categoryId])
+  @@index([uploaderId])
+  @@index([status])
+}
+
+model LibraryTag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  documents LibraryDocumentTag[]
+  createdAt DateTime @default(now())
+}
+
+model LibraryDocumentTag {
+  documentId Int
+  tagId      Int
+  document   LibraryDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tag        LibraryTag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tagId])
+}
+
+/// 审计日志：不加外键关联，资料或用户被删除后日志仍然保留
+model LibraryAuditLog {
+  id         Int      @id @default(autoincrement())
+  documentId Int
+  actorId    Int
+  action     String
+  detail     String?
+  createdAt  DateTime @default(now())
+
+  @@index([documentId])
+  @@index([actorId])
 }

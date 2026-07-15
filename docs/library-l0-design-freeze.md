@@ -10,7 +10,7 @@
 |---|---|---|
 | `npm test` | ✅ 6 文件 24 项全过 | |
 | `npm run lint` (`tsc --noEmit`) | ✅ 零错误 | |
-| `npm run build` | ⏳ 待手动验证 | 沙箱安全策略拦截了 `.next/` 清理操作 |
+| `npm run build` | ✅ 32 页面全部生成 | BUILD_ID: wF7d8axyaPUrEEBoYKZqg |
 | `ignoreBuildErrors` | ✅ 已移除 | `tsc --noEmit` 通过，可安全移除 |
 
 ### L0 期间修改的文件
@@ -144,25 +144,27 @@
 
 ### 文件大小
 
-- 默认单文件上限：50 MiB
+- 默认单文件上限：200 MiB
 - 通过环境变量 `LIBRARY_MAX_FILE_SIZE_MB` 配置
+- 总存储不设配额，通过磁盘空间监控提醒管理员
 
 ### 允许的文件类型（扩展名白名单）
 
+第一版仅支持文档类型，后续按需扩展。
+
 | 类别 | 扩展名 |
 |---|---|
-| 办公文档 | `.pdf` `.doc` `.docx` `.xls` `.xlsx` `.ppt` `.pptx` |
-| 图片 | `.jpg` `.jpeg` `.png` `.gif` `.bmp` `.svg` `.webp` |
-| 压缩包 | `.zip` `.rar` `.7z` `.tar` `.gz` |
-| 文本 | `.txt` `.md` `.csv` `.json` `.xml` |
-| 工程文件 | `.dwg` `.dxf` `.step` `.stp` `.iges` `.igs` `.stl` `.obj` `.solidworks` `.sldprt` `.sldasm` |
-| 代码包 | `.py` `.c` `.cpp` `.h` `.java` `.ino` |
+| PDF | `.pdf` |
+| Word | `.doc` `.docx` |
+| Excel | `.xls` `.xlsx` `.csv` |
+| PowerPoint | `.ppt` `.pptx` |
+| 文本 | `.txt` `.md` `.markdown` |
+| 富文本 | `.rtf` |
+| OpenDocument | `.odt` `.ods` `.odp` |
 
 ### 禁止的文件类型
 
-`exe` `msi` `bat` `cmd` `ps1` `js` `mjs` `html` `htm` `svg`（含脚本）
-
-> 注意：`.svg` 同时出现在允许和禁止列表中。第一版禁止 SVG 上传，因为 SVG 可内嵌脚本。如需允许，需在服务端做 SVG 清洗。
+所有不在白名单中的扩展名均被拒绝。特别禁止可执行文件和脚本类型：`exe` `msi` `bat` `cmd` `ps1` `js` `mjs` `html` `htm` `svg`（可内嵌脚本）。
 
 ### 下载安全
 
@@ -179,18 +181,7 @@
 
 ## 7. 初始分类
 
-- 团队制度
-- 赛季与比赛规则
-- 机械与 CAD
-- 电控与嵌入式
-- 视觉与算法
-- 宣传与设计
-- 培训资料
-- 采购与供应商资料
-- 历届项目归档
-- 其他
-
-管理员可以调整分类；代码和测试不能依赖中文分类名称。
+**不预设种子数据。** 分类表创建后为空，由管理员自行创建和删除。数据模型支持树形结构（`parentId` 字段预留），第一版界面只支持一级分类。代码和测试不能依赖特定分类名称。
 
 ## 8. 部署配置变更
 
@@ -211,8 +202,6 @@ HJ_DB_BACKUP_REPO=https://github.com/yoush0uldknowme/HJ_DB_Backup.git
 
 ## 9. 遗留风险
 
-1. **`npm run build` 未验证** — 沙箱安全策略拦截了 `.next/` 目录清理。需手动运行确认。移除 `ignoreBuildErrors` 后，如果有 next 特有的类型检查差异，构建可能失败。
-2. **Git 历史中的旧备份** — `prisma/dev.db.backup.20260626_195320` 仍存在于 git 历史中。用户选择暂时不清理。
-3. **服务器 git 凭证** — 自动备份需要服务器有 GitHub 推送权限，需在部署时配置 SSH key 或 PAT。
-4. **50 MiB 上限待确认** — 需确认是否覆盖第一批真实资料，不要在没有样本统计前提高上限。
-5. **校内服务器 IP** — 需确认固定 IP 或 DHCP 地址保留方式。
+1. **Git 历史中的旧备份** — `prisma/dev.db.backup.20260626_195320` 仍存在于 git 历史中。用户选择暂时不清理。
+2. **服务器 git 凭证** — 自动备份需要服务器有 GitHub 推送权限，需在部署时配置 SSH key 或 PAT。
+3. **校内服务器 IP** — 需确认固定 IP 或 DHCP 地址保留方式。
