@@ -14,13 +14,15 @@ RestartSec=5
 Environment=NODE_ENV=production
 Environment=PORT=4011
 Environment=HOST=127.0.0.1
+Environment=HJ_DB_BACKUP_DIR=/opt/hj-db-backup
+Environment=HJ_DB_BACKUP_REPO=https://github.com/yoush0uldknowme/HJ_DB_Backup.git
 
 # 安全加固
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/opt/hj-resource/prisma /opt/hj-resource/public/uploads /opt/hj-resource/backups
+ReadWritePaths=/opt/hj-resource/prisma /opt/hj-resource/public/uploads /opt/hj-resource/backups /opt/hj-resource/storage /opt/hj-db-backup
 ReadOnlyPaths=/opt/hj-resource
 
 # 日志

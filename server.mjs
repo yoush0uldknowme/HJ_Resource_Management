@@ -13,6 +13,11 @@
  *   TLS_KEY   HTTPS 私钥路径
  *   NODE_ENV  production 时禁用开发模式
  *
+ *   BACKUP_INTERVAL_HOURS  自动备份间隔（小时），默认 24
+ *   DISABLE_AUTO_BACKUP    设为 1 禁用自动备份
+ *   HJ_DB_BACKUP_DIR       备份仓库本地路径，默认 D:/github/HJ_DB_Backup
+ *   HJ_DB_BACKUP_REPO      备份远程仓库 URL（首次运行时自动设置 remote）
+ *
  * 使用:
  *   node server.mjs                    # Windows HTTPS 模式
  *   NO_HTTPS=1 node server.mjs          # Ubuntu 反向代理模式
@@ -21,8 +26,10 @@
 import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { parse } from "node:url";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { networkInterfaces } from "node:os";
+import { spawn } from "node:child_process";
+import path from "node:path";
 import next from "next";
 import { generateCerts } from "./scripts/generate-certs.mjs";
 
@@ -80,6 +87,7 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   let server;
+  let backupTimer = null;
 
   if (NO_HTTPS) {
     // ── HTTP 纯文本模式（Ubuntu 反向代理） ──
@@ -120,11 +128,50 @@ app.prepare().then(() => {
     }
     console.log("═══════════════════════════════════════════════════════");
     console.log("");
+
+    // ── 自动数据库备份 ──
+    // 应用运行时自动定期备份，不依赖外部调度工具
+    const BACKUP_INTERVAL_HOURS = parseInt(process.env.BACKUP_INTERVAL_HOURS || "24", 10);
+    const BACKUP_SCRIPT = path.join(import.meta.dirname, "scripts", "backup-db.mjs");
+
+    function runBackup() {
+      if (!existsSync(BACKUP_SCRIPT)) return;
+      const child = spawn(process.execPath, [BACKUP_SCRIPT], {
+        stdio: ["ignore", "pipe", "pipe"],
+        cwd: import.meta.dirname,
+        env: { ...process.env },
+      });
+      let output = "";
+      child.stdout.on("data", (d) => { output += d; });
+      child.stderr.on("data", (d) => { output += d; });
+      child.on("close", (code) => {
+        const lastLine = output.trim().split("\n").pop() || "";
+        if (code === 0) {
+          console.log(`[备份] 成功 — ${lastLine}`);
+        } else {
+          console.error(`[备份] 失败 (exit ${code}) — ${lastLine}`);
+        }
+      });
+      child.on("error", (err) => {
+        console.error(`[备份] 无法启动备份脚本 — ${err.message}`);
+      });
+    }
+
+    let backupTimer = null;
+    if (process.env.DISABLE_AUTO_BACKUP !== "1") {
+      // 启动后 2 分钟执行首次备份，避免与启动初始化抢资源
+      setTimeout(runBackup, 2 * 60 * 1000);
+      backupTimer = setInterval(runBackup, BACKUP_INTERVAL_HOURS * 60 * 60 * 1000);
+      console.log(`  自动备份: 每 ${BACKUP_INTERVAL_HOURS} 小时执行一次`);
+      console.log("  （设置 DISABLE_AUTO_BACKUP=1 可禁用）");
+      console.log("");
+    }
   });
 
   // 优雅关闭
   const gracefulShutdown = (signal) => {
     console.log(`\n收到 ${signal} 信号，正在关闭...`);
+    if (backupTimer) clearInterval(backupTimer);
     server.close(() => {
       console.log("服务器已关闭");
       process.exit(0);

@@ -42,3 +42,6 @@ tools/*/启动资源管理系统.exe
 Thumbs.db
 .vscode/
 .idea/
+
+# WorkBuddy local workspace
+.workbuddy/
