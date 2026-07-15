@@ -9,12 +9,13 @@ out/
 .env
 .env*.local
 
-# local database and uploads
-prisma/dev.db
-prisma/dev.db-*
-prisma/prod.db
-prisma/prod.db-*
+# local database and uploads (dev.db* covers .backup, -wal, -shm, -journal etc.)
+prisma/dev.db*
+prisma/prod.db*
 public/uploads/
+
+# library file storage (never commit user-uploaded documents)
+storage/
 
 # backups
 backups/
