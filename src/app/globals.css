@@ -2259,3 +2259,95 @@ tr:hover td { background: var(--color-bg-hover); }
   }
   .cinematic-metrics strong { font-size: var(--text-xl); }
 }
+
+/* ── 资料库样式 ── */
+
+.library-list { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.library-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-3); padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); transition: border-color .15s;
+}
+.library-item:hover { border-color: var(--accent); }
+
+.library-item-main { flex: 1; min-width: 0; }
+.library-item-main strong { display: block; margin-bottom: var(--space-1); }
+.library-item-main a { text-decoration: none; color: inherit; }
+.library-item-main a:hover strong { color: var(--accent); }
+
+.library-item-meta {
+  display: flex; flex-wrap: wrap; gap: var(--space-2);
+  font-size: var(--text-sm); align-items: center;
+}
+
+.library-item-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--space-1); }
+
+.tag-chip {
+  display: inline-block; padding: 2px 8px;
+  font-size: var(--text-xs); border-radius: 99px;
+  background: var(--surface-2); color: var(--text-muted);
+}
+
+/* 分页 */
+.pagination {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-3) 0; gap: var(--space-3);
+}
+
+/* 上传进度 */
+.upload-progress {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+.progress-bar {
+  flex: 1; height: 8px; background: var(--surface-2);
+  border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; background: var(--accent);
+  transition: width .2s; border-radius: 4px;
+}
+
+/* 错误提示 */
+.error-text { color: #c0392b; font-size: var(--text-sm); margin: var(--space-2) 0; }
+
+/* 危险操作区 */
+.danger-zone {
+  margin-top: var(--space-4); padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+.button.danger {
+  background: #c0392b; color: #fff; border-color: #c0392b;
+}
+.button.danger:hover { background: #a93226; }
+
+/* 详情页网格 */
+.detail-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+.detail-grid .field { display: flex; flex-direction: column; gap: 4px; }
+.detail-grid .field label { font-size: var(--text-xs); color: var(--text-muted); }
+
+.sha256 {
+  font-family: var(--mono-font, monospace); font-size: var(--text-xs);
+  word-break: break-all; color: var(--text-muted);
+}
+
+/* 审计日志表格 */
+.table-wrap { overflow-x: auto; }
+.audit-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.audit-table th, .audit-table td {
+  padding: var(--space-2) var(--space-3); text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.audit-table th { font-weight: 600; color: var(--text-muted); font-size: var(--text-xs); }
+.audit-table tr:hover td { background: var(--surface-2); }
+.nowrap { white-space: nowrap; }
+
+@media (max-width: 768px) {
+  .library-item { flex-direction: column; }
+  .detail-grid { grid-template-columns: 1fr; }
+}

@@ -23,6 +23,7 @@ export function AppShell({
       { href: "/", label: "首页" },
       { href: canManage ? "/admin" : "/user", label: "工作台" },
       { href: "/motors", label: "电机" },
+      { href: "/library", label: "资料库" },
       { href: "/motors/inbound", label: "入库" },
       { href: "/motors/outbound", label: canManage ? "出库" : "申请出库" },
       ...(canManage

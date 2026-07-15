@@ -6,7 +6,7 @@
 
 - 总体项目：统一公网门户、内网资料库、资源管理与 NFC 队员卡平台。
 - 当前唯一实施目标：内网资料库 MVP。
-- 当前任务：L2 上传与下载 API 已完成，可启动 L3 前端页面。
+- 当前任务：L3 前端页面已完成，资料库 MVP 功能已全部实现。
 - 主计划：`docs/unified-platform-master-plan.md`。
 - 设计冻结：`docs/library-l0-design-freeze.md`。
 
@@ -36,30 +36,29 @@
 - 已有模块：登录、管理员和操作员、电机档案、标签、扫码查询、出入库、申请审批、日志、移动端。
 - 最近一次验证：`npm test` 8 个测试文件 62 项全过。
 - 最近一次验证：`npm run lint`（`tsc --noEmit`）零错误。
-- 最近一次验证：`npm run build` 35 路由全部生成。
+- 最近一次验证：`npm run build` 40 路由全部生成。
 
 ## 最近完成
 
+- L3 前端页面完成，资料库 MVP 全部功能已实现。
+- 新增 7 个页面：/library（列表）、/library/new（上传）、/library/[id]（详情）、/library/[id]/edit（编辑）、/admin/library（管理入口）、/admin/library/categories（分类管理）、/admin/library/audit（审计日志）。
+- 上传页和编辑页使用 Server+Client Component 模式，上传通过 XMLHttpRequest 支持进度条。
+- 分类管理支持创建、编辑、删除（有文档时禁止删除），实时更新列表。
+- 审计日志支持分页，手动关联用户名（LibraryAuditLog 无外键）。
+- 导航栏新增"资料库"入口，globals.css 新增资料库专用样式。
 - L2 上传与下载 API 完成。
 - 新增 6 个 API Route：upload、[id]/download、categories（GET+POST）、categories/[id]（PUT+DELETE）、documents（GET 列表）、documents/[id]（GET+PATCH+DELETE）。
 - 创建 `src/lib/library/service.ts`（上传、下载、分类 CRUD、文档 CRUD 业务逻辑，含 SHA-256 计算、孤儿文件清理、事务补偿）。
 - 创建 `src/lib/library/slug.ts`（slug 生成、重复 slug 去重，新增 11 项测试）。
 - 在 auth 模块新增 `getCurrentUserCookieOnly()`，下载接口只认 cookie 不接受 URL token。
-- 上传走 API Route Handler（不走 Server Action），支持 multipart/form-data，200 MiB 上限。
-- 下载接口设置 Content-Disposition: attachment、X-Content-Type-Options: nosniff、RFC 5987 中文文件名。
-- L1 数据库与安全存储完成。
-- 新增 5 张 Prisma 表：LibraryCategory、LibraryDocument、LibraryTag、LibraryDocumentTag、LibraryAuditLog。
-- 创建 `src/lib/library/constants.ts`（扩展名白名单、MIME 映射、文件大小限制）。
-- 创建 `src/lib/library/security.ts`（UUID 文件名、路径穿越防护、扩展名校验、磁盘监控）。
-- 新增 27 项单元测试覆盖路径穿越攻击、扩展名校验、UUID 生成、文件大小限制。
-- 设计冻结文档更新：文件上限 50→200 MiB、文件类型缩减为仅文档、分类改为不预设种子。
-- L0 基线与设计冻结完成（含 gitignore 修复、备份脚本、ignoreBuildErrors 移除、启动器 BUILD_ID 检测 bug 修复）。
+- L1 数据库与安全存储完成（5 张 Prisma 表、安全工具函数、27 项测试）。
+- L0 基线与设计冻结完成（gitignore 修复、备份脚本、ignoreBuildErrors 移除、启动器修复）。
 
 ## 验证结果
 
 - `npm test`：8 文件 62 项全过（含 27 项安全测试 + 11 项 slug 测试）。
 - `npm run lint`（`tsc --noEmit`）：零错误。
-- `npm run build`：35 路由全部生成（含 6 个新 library API route）。
+- `npm run build`：40 路由全部生成（含 6 个 API route + 7 个页面）。
 - `prisma db push`：5 张 Library 表创建成功。
 
 ## 待确认或风险
@@ -72,15 +71,12 @@
 
 ## 下一任务
 
-L2 已完成，下一批为 L3（前端页面）：
+L3 已完成，资料库 MVP 功能全部实现。后续可选优化：
 
-1. `/library` — 资料列表页（搜索、分类过滤、分页、下载按钮）。
-2. `/library/new` — 上传页面（文件选择、元数据表单、分类选择、标签输入）。
-3. `/library/[id]` — 资料详情页（元数据展示、下载按钮、管理员编辑/归档/删除）。
-4. `/admin/library` — 管理后台入口（分类管理、审计日志入口）。
-5. `/admin/library/categories` — 分类管理页（增删改、排序）。
-6. `/admin/library/audit` — 审计日志页。
-7. 导航栏添加资料库入口。
+1. **L4 权限细化** — 操作员编辑自己上传的资料、批量操作。
+2. **L5 回收站** — 软删除恢复、定期清理过期回收站文件。
+3. **实际部署测试** — 在校内服务器上部署，验证备份、HTTPS、systemd 配置。
+4. **文件类型扩展** — 根据实际使用反馈，扩展 CAD/图片/视频等类型白名单。
 
 ## 更新格式
 
