@@ -6,7 +6,7 @@
 
 - 总体项目：统一公网门户、内网资料库、资源管理与 NFC 队员卡平台。
 - 当前唯一实施目标：内网资料库 MVP。
-- 当前任务：L1 数据库与安全存储已完成，可启动 L2 上传与下载。
+- 当前任务：L2 上传与下载 API 已完成，可启动 L3 前端页面。
 - 主计划：`docs/unified-platform-master-plan.md`。
 - 设计冻结：`docs/library-l0-design-freeze.md`。
 
@@ -34,12 +34,19 @@
 
 - 技术栈：Next.js 15、React 19、Prisma 6、SQLite、TypeScript、Vitest。
 - 已有模块：登录、管理员和操作员、电机档案、标签、扫码查询、出入库、申请审批、日志、移动端。
-- 最近一次验证：`npm test` 7 个测试文件 51 项全过。
+- 最近一次验证：`npm test` 8 个测试文件 62 项全过。
 - 最近一次验证：`npm run lint`（`tsc --noEmit`）零错误。
-- 最近一次验证：`npm run build` 32 页面全部生成。
+- 最近一次验证：`npm run build` 35 路由全部生成。
 
 ## 最近完成
 
+- L2 上传与下载 API 完成。
+- 新增 6 个 API Route：upload、[id]/download、categories（GET+POST）、categories/[id]（PUT+DELETE）、documents（GET 列表）、documents/[id]（GET+PATCH+DELETE）。
+- 创建 `src/lib/library/service.ts`（上传、下载、分类 CRUD、文档 CRUD 业务逻辑，含 SHA-256 计算、孤儿文件清理、事务补偿）。
+- 创建 `src/lib/library/slug.ts`（slug 生成、重复 slug 去重，新增 11 项测试）。
+- 在 auth 模块新增 `getCurrentUserCookieOnly()`，下载接口只认 cookie 不接受 URL token。
+- 上传走 API Route Handler（不走 Server Action），支持 multipart/form-data，200 MiB 上限。
+- 下载接口设置 Content-Disposition: attachment、X-Content-Type-Options: nosniff、RFC 5987 中文文件名。
 - L1 数据库与安全存储完成。
 - 新增 5 张 Prisma 表：LibraryCategory、LibraryDocument、LibraryTag、LibraryDocumentTag、LibraryAuditLog。
 - 创建 `src/lib/library/constants.ts`（扩展名白名单、MIME 映射、文件大小限制）。
@@ -50,9 +57,9 @@
 
 ## 验证结果
 
-- `npm test`：7 文件 51 项全过（含 27 项资料库安全测试）。
+- `npm test`：8 文件 62 项全过（含 27 项安全测试 + 11 项 slug 测试）。
 - `npm run lint`（`tsc --noEmit`）：零错误。
-- `npm run build`：32 页面全部生成。
+- `npm run build`：35 路由全部生成（含 6 个新 library API route）。
 - `prisma db push`：5 张 Library 表创建成功。
 
 ## 待确认或风险
@@ -65,13 +72,15 @@
 
 ## 下一任务
 
-L1 已完成，下一批为 L2（上传与下载）：
+L2 已完成，下一批为 L3（前端页面）：
 
-1. 实现 `/api/library/upload` 上传接口（API Route Handler，不走 Server Action）。
-2. 实现 `/api/library/[id]/download` 鉴权下载接口（只认 cookie，不接受 URL token）。
-3. 文件写入成功后提交数据库记录，DB 失败时清理孤儿文件。
-4. 上传时计算 SHA-256，写入审计日志。
-5. 磁盘空间检查：剩余空间不足时拒绝上传。
+1. `/library` — 资料列表页（搜索、分类过滤、分页、下载按钮）。
+2. `/library/new` — 上传页面（文件选择、元数据表单、分类选择、标签输入）。
+3. `/library/[id]` — 资料详情页（元数据展示、下载按钮、管理员编辑/归档/删除）。
+4. `/admin/library` — 管理后台入口（分类管理、审计日志入口）。
+5. `/admin/library/categories` — 分类管理页（增删改、排序）。
+6. `/admin/library/audit` — 审计日志页。
+7. 导航栏添加资料库入口。
 
 ## 更新格式
 

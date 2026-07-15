@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { getTokenFromCookieOrHeader, verifyToken } from "./cookies";
+import { getTokenFromCookie, getTokenFromCookieOrHeader, verifyToken } from "./cookies";
 
 export type CurrentUser = {
   id: number;
@@ -48,6 +48,24 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   if (!claims) return null;
 
   // 验证用户仍然存在且活跃
+  const user = await prisma.user.findFirst({
+    where: { id: claims.id, username: claims.username, isActive: true },
+    select: { id: true, username: true, role: true }
+  });
+  return user ?? null;
+}
+
+/**
+ * 仅从 cookie 获取当前用户（不接受 URL token fallback）。
+ * 用于资料库下载等安全敏感接口，防止 token 泄露到日志/Referer。
+ */
+export async function getCurrentUserCookieOnly(): Promise<CurrentUser | null> {
+  const token = await getTokenFromCookie();
+  if (!token) return null;
+
+  const claims = await verifyToken(token);
+  if (!claims) return null;
+
   const user = await prisma.user.findFirst({
     where: { id: claims.id, username: claims.username, isActive: true },
     select: { id: true, username: true, role: true }
