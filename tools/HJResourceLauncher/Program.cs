@@ -91,9 +91,10 @@ if (File.Exists(localNode))
 if (mode == "prod")
 {
     var nextBuild = Path.Combine(projectRoot, ".next");
-    if (!Directory.Exists(nextBuild))
+    var buildIdFile = Path.Combine(nextBuild, "BUILD_ID");
+    if (!File.Exists(buildIdFile))
     {
-        Console.WriteLine("  未检测到生产构建 (.next 目录不存在)。");
+        Console.WriteLine("  未检测到生产构建 (BUILD_ID 不存在或构建不完整)。");
         Console.WriteLine("  是否自动执行 npm run build？");
         Console.Write("  输入 Y 执行构建，其他任意键退出: ");
         var buildInput = Console.ReadLine()?.Trim()?.ToUpper() ?? "";
@@ -127,8 +128,8 @@ if (mode == "prod")
                 if (buildProcess.ExitCode != 0)
                     Fail("构建失败，请检查错误信息后重试。");
             }
-            if (!Directory.Exists(nextBuild))
-                Fail("构建未生成 .next 目录，请手动执行 npm run build。");
+            if (!File.Exists(buildIdFile))
+                Fail("构建未生成 BUILD_ID，请手动执行 npm run build。");
             Console.WriteLine("  构建完成！");
         }
         else
