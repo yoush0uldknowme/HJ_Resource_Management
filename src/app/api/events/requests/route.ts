@@ -5,10 +5,10 @@ import { getListenerCount, subscribeToNewRequests, unsubscribeListener } from "@
 
 export const dynamic = "force-dynamic";
 
-// 最大 SSE 连接数限制，防止耗尽数据库连接池
-const MAX_SSE_CONNECTIONS = 10;
-// 连接超时：5 分钟后自动关闭，防止僵尸连接
-const CONNECTION_TIMEOUT_MS = 5 * 60 * 1000;
+// 最大 SSE 连接数限制，防止耗尽资源
+const MAX_SSE_CONNECTIONS = 5;
+// 连接超时：2 分钟后自动关闭，防止僵尸连接堆积
+const CONNECTION_TIMEOUT_MS = 2 * 60 * 1000;
 
 /**
  * SSE 接口：管理员订阅新出库申请通知
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
         }
       }, 30000);
 
-      // 连接超时：5 分钟后自动关闭
+      // 连接超时后自动关闭
       const timeout = setTimeout(() => {
         clearInterval(heartbeat);
         unsubscribeListener(listener);

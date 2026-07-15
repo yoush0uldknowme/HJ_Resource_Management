@@ -82,15 +82,25 @@ export async function createMotorAction(formData: FormData) {
     select: { motorCode: true }
   });
   const lastSequence = latest ? Number(latest.motorCode.slice(-4)) || 0 : 0;
-  const motorCode = buildMotorCode(parsed.model, lastSequence + 1);
 
   // 带重试的创建（处理编码竞态）
-  const MAX_RETRIES = 2;
+  const MAX_RETRIES = 5;
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
+      // 每次重试时重新查询最新序列号，避免并发冲突时使用过期数据
+      let seq = lastSequence + attempt + 1;
+      if (attempt > 0) {
+        const latestInRetry = await prisma.motor.findFirst({
+          where: { motorCode: motorCodeRange(parsed.model) },
+          orderBy: { motorCode: "desc" },
+          select: { motorCode: true }
+        });
+        seq = (latestInRetry ? Number(latestInRetry.motorCode.slice(-4)) || 0 : 0) + 1;
+      }
+      const motorCode = buildMotorCode(parsed.model, seq);
       const motor = await prisma.motor.create({
         data: {
-          motorCode: attempt === 0 ? motorCode : buildMotorCode(parsed.model, lastSequence + attempt + 1),
+          motorCode,
           name: parsed.name,
           model: parsed.model,
           snCode: null,

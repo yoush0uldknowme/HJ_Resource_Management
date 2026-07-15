@@ -23,13 +23,12 @@ export function unsubscribeListener(listener: Listener): void {
   listeners.delete(listener);
 }
 
-/** 触发新申请事件，通知所有 SSE 订阅者 */
+/** 触发新申请事件，通知所有 SSE 订阅者。同时清理失效的 listener。 */
 export function emitNewRequest(data: EventData): void {
   for (const listener of listeners) {
     try {
       listener(data);
     } catch {
-      // 调用失败说明 listener 已失效（连接异常断开），立即清理
       listeners.delete(listener);
     }
   }

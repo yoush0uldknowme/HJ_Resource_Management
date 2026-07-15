@@ -22,20 +22,60 @@ import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
 import { parse } from "node:url";
 import { readFileSync } from "node:fs";
+import { networkInterfaces } from "node:os";
 import next from "next";
 import { generateCerts } from "./scripts/generate-certs.mjs";
+
+// ── 自动检测本机局域网 IP ──
+function getLanIp() {
+  const ifaces = networkInterfaces();
+  // 优先匹配真实的物理网卡名称
+  const priorityPatterns = [/wlan/i, /wi-fi/i, /以太网/i, /ethernet/i, /en\d/i, /eth\d/i];
+  // 排除虚拟网卡
+  const excludePatterns = [/vmware/i, /virtualbox/i, /vbox/i, /hyper-v/i, /docker/i, /veth/i, /loopback/i];
+
+  // 先按优先级匹配
+  for (const pattern of priorityPatterns) {
+    for (const [name, addrs] of Object.entries(ifaces)) {
+      if (pattern.test(name) && !excludePatterns.some((ep) => ep.test(name))) {
+        for (const addr of addrs) {
+          if (addr.family === "IPv4" && !addr.internal) {
+            return addr.address;
+          }
+        }
+      }
+    }
+  }
+
+  // 兜底：取第一个非内部非虚拟的 IPv4
+  for (const [name, addrs] of Object.entries(ifaces)) {
+    if (excludePatterns.some((ep) => ep.test(name))) continue;
+    for (const addr of addrs) {
+      if (addr.family === "IPv4" && !addr.internal) {
+        return addr.address;
+      }
+    }
+  }
+  return null;
+}
 
 const PORT = parseInt(process.env.PORT || "4011", 10);
 const HOST = process.env.HOST || "0.0.0.0";
 const NO_HTTPS = process.env.NO_HTTPS === "1";
 const dev = process.env.NODE_ENV !== "production";
+const LAN_IP = getLanIp();
 
 // 仅 Windows 自签证书开发环境禁用 TLS 验证
 if (dev && !NO_HTTPS) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-const app = next({ dev, hostname: HOST, port: PORT });
+// 开发模式下自动将本机 IP 加入允许列表，手机可直接访问
+const nextConf = dev && LAN_IP
+  ? { allowedDevOrigins: [LAN_IP] }
+  : {};
+
+const app = next({ dev, hostname: HOST, port: PORT, conf: nextConf });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
@@ -69,13 +109,16 @@ app.prepare().then(() => {
     if (err) throw err;
     const protocol = NO_HTTPS ? "HTTP" : "HTTPS";
     console.log("");
-    console.log("════════════════════════════════════════════════");
+    console.log("═══════════════════════════════════════════════════════");
     console.log(`  HJ 资源管理系统已启动 (${protocol})`);
-    console.log(`  地址: ${protocol.toLowerCase()}://${HOST === "0.0.0.0" ? "localhost" : HOST}:${PORT}`);
+    console.log(`  桌面端: ${protocol.toLowerCase()}://localhost:${PORT}`);
+    if (LAN_IP) {
+      console.log(`  手机端: ${protocol.toLowerCase()}://${LAN_IP}:${PORT}`);
+    }
     if (!NO_HTTPS) {
       console.log("  首次访问需点击「高级 → 继续前往」");
     }
-    console.log("════════════════════════════════════════════════");
+    console.log("═══════════════════════════════════════════════════════");
     console.log("");
   });
 

@@ -120,10 +120,9 @@ export function AdminNotifier({ isAdmin }: { isAdmin: boolean }) {
 
       eventSource.onerror = () => {
         eventSource.close();
-        // 5 秒后重连
-        setTimeout(() => {
-          connectSSE();
-        }, 5000);
+        // 不重连：如果是 401（未登录/非管理员），EventSource 无法读取状态码，
+        // 但 onerror 一定触发。避免无限重连循环，静默放弃。
+        // 管理员页面重新加载时会重新建立连接。
       };
     };
 

@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "启动资源管理系统/1.0.0": {
+        "runtime": {
+          "启动资源管理系统.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "启动资源管理系统/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

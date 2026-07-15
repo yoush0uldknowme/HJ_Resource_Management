@@ -41,6 +41,36 @@ else
     Console.WriteLine("  未检测到可用局域网 IP，请确认电脑已联网。");
 }
 Console.WriteLine();
+
+// ── 模式选择 ──
+Console.WriteLine("══════════════════════════════════════════════════");
+Console.WriteLine("  请选择启动模式:");
+Console.WriteLine();
+Console.WriteLine("  [1] 调试模式 (Development)");
+Console.WriteLine("      - 支持热更新，修改代码后自动刷新");
+Console.WriteLine("      - 长时间运行可能变慢，建议每天重启");
+Console.WriteLine();
+Console.WriteLine("  [2] 生产模式 (Production)  ← 推荐日常使用");
+Console.WriteLine("      - 性能最优，内存稳定，可长期运行");
+Console.WriteLine("      - 修改代码后需要重新启动");
+Console.WriteLine();
+Console.WriteLine("══════════════════════════════════════════════════");
+
+var mode = "";
+while (mode != "dev" && mode != "prod")
+{
+    Console.Write("  请输入数字 [1/2] 或直接回车选择生产模式: ");
+    var input = Console.ReadLine()?.Trim() ?? "";
+    if (input == "1")
+        mode = "dev";
+    else if (input == "2" || input == "")
+        mode = "prod";
+}
+Console.WriteLine();
+Console.WriteLine(mode == "dev" 
+    ? "  ▶ 将以「调试模式」启动"
+    : "  ▶ 将以「生产模式」启动");
+Console.WriteLine();
 Console.WriteLine("══════════════════════════════════════════════════");
 Console.WriteLine();
 
@@ -56,6 +86,58 @@ var nodeExe = "node.exe";
 var localNode = Path.Combine(projectRoot, "node_modules", ".bin", "node.exe");
 if (File.Exists(localNode))
     nodeExe = localNode;
+
+// ── 生产模式预检查 ──
+if (mode == "prod")
+{
+    var nextBuild = Path.Combine(projectRoot, ".next");
+    if (!Directory.Exists(nextBuild))
+    {
+        Console.WriteLine("  未检测到生产构建 (.next 目录不存在)。");
+        Console.WriteLine("  是否自动执行 npm run build？");
+        Console.Write("  输入 Y 执行构建，其他任意键退出: ");
+        var buildInput = Console.ReadLine()?.Trim()?.ToUpper() ?? "";
+        if (buildInput == "Y" || buildInput == "YES")
+        {
+            Console.WriteLine("  正在构建（请耐心等待，首次构建约需 1-2 分钟）...");
+            var buildProcess = Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c cd /d \"{projectRoot}\" && npm run build",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            });
+            if (buildProcess != null)
+            {
+                // 实时输出构建日志
+                buildProcess.OutputDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Console.WriteLine($"  {e.Data}");
+                };
+                buildProcess.ErrorDataReceived += (_, e) =>
+                {
+                    if (!string.IsNullOrEmpty(e.Data))
+                        Console.WriteLine($"  {e.Data}");
+                };
+                buildProcess.BeginOutputReadLine();
+                buildProcess.BeginErrorReadLine();
+                buildProcess.WaitForExit(120000);
+                if (buildProcess.ExitCode != 0)
+                    Fail("构建失败，请检查错误信息后重试。");
+            }
+            if (!Directory.Exists(nextBuild))
+                Fail("构建未生成 .next 目录，请手动执行 npm run build。");
+            Console.WriteLine("  构建完成！");
+        }
+        else
+        {
+            Fail("请先执行 npm run build 后再启动。");
+        }
+    }
+    Console.WriteLine();
+}
 
 // ── 端口检测 ──
 if (IsPortOpen("127.0.0.1", Port))
@@ -90,6 +172,7 @@ var serverProcess = new Process
     StartInfo = new ProcessStartInfo
     {
         FileName = runServerBat,
+        Arguments = mode,
         UseShellExecute = true,
         CreateNoWindow = false,
         WindowStyle = ProcessWindowStyle.Normal

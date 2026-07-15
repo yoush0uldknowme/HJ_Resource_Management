@@ -138,11 +138,13 @@ export function code128Values(text: string): number[] {
 }
 
 export function renderCode128Svg(text: string): string {
+  // 防御性处理：如果已有数据中包含非ASCII字符，过滤后仍可生成条形码
+  const cleaned = text.replace(/[^\x20-\x7F]/g, "?");
   const moduleWidth = 2;
   const barHeight = 72;
   const quietZone = 18;
   const labelHeight = 24;
-  const values = code128Values(text);
+  const values = code128Values(cleaned);
   let x = quietZone;
   const bars: string[] = [];
 

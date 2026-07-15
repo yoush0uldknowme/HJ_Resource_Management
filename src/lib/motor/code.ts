@@ -1,6 +1,12 @@
 export function normalizeMotorModel(model: string): string {
   const normalized = model.trim().toUpperCase().replace(/\s+/g, "");
   if (!normalized) throw new Error("model is required");
+  // Code128-B barcode only supports ASCII (codes 32-127)
+  if (/[^\x20-\x7E]/.test(normalized)) {
+    throw new Error(
+      "型号只能包含英文字母、数字和基本符号（如 GM6020、M3508），不支持中文/特殊字符"
+    );
+  }
   return normalized;
 }
 
