@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser, isOperator } from "@/lib/auth/index";
 import { uploadDocument } from "@/lib/library/service";
+import { getMaxFileSizeBytes } from "@/lib/library/constants";
+import { parseMultipart, createFileFromBuffer } from "@/lib/server/multipart";
 
 /**
  * 上传资料文件
  * POST /api/library/upload
  * multipart/form-data: file, title, description?, categoryId, visibility, tags?
  * 权限：operator（管理员和操作员均可上传）
+ *
+ * 注意：使用 busboy 绕过 Next.js 原生 request.formData()，避免中文文件名/大文件解析失败。
  */
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
@@ -14,25 +18,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "未登录或权限不足" }, { status: 401 });
   }
 
-  let formData: FormData;
+  let parsed;
   try {
-    formData = await request.formData();
-  } catch {
-    return NextResponse.json({ ok: false, message: "请求格式错误，需要 multipart/form-data" }, { status: 400 });
+    parsed = await parseMultipart(request, { maxFileSize: getMaxFileSizeBytes() });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "请求格式错误，需要 multipart/form-data";
+    return NextResponse.json({ ok: false, message }, { status: 400 });
   }
 
-  const file = formData.get("file");
-  const title = formData.get("title");
-  const description = formData.get("description");
-  const categoryIdRaw = formData.get("categoryId");
-  const visibility = formData.get("visibility");
-  const tagsRaw = formData.getAll("tags");
+  const fileData = parsed.files.find((f) => f.fieldname === "file");
+  const title = parsed.fields.title?.[0];
+  const description = parsed.fields.description?.[0];
+  const categoryIdRaw = parsed.fields.categoryId?.[0];
+  const visibility = parsed.fields.visibility?.[0];
+  const tags = parsed.fields.tags ?? [];
 
   // 校验必填字段
-  if (!(file instanceof File)) {
+  if (!fileData || fileData.size === 0) {
     return NextResponse.json({ ok: false, message: "缺少文件" }, { status: 400 });
   }
-  if (typeof title !== "string" || !title.trim()) {
+  if (!title || !title.trim()) {
     return NextResponse.json({ ok: false, message: "标题不能为空" }, { status: 400 });
   }
   const categoryId = parseInt(String(categoryIdRaw), 10);
@@ -43,15 +48,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message: "无效的可见范围" }, { status: 400 });
   }
 
-  const tags = tagsRaw.filter((t): t is string => typeof t === "string" && t.trim().length > 0);
+  const file = createFileFromBuffer(fileData.buffer, fileData.filename, fileData.mimetype);
+  const cleanedTags = tags.filter((t) => t.trim().length > 0);
 
   const result = await uploadDocument({
     file,
     title,
-    description: typeof description === "string" ? description : undefined,
+    description,
     categoryId,
     visibility,
-    tags,
+    tags: cleanedTags,
     uploaderId: user.id,
   });
 

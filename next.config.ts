@@ -5,7 +5,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb"
-    }
+    },
+    // 资料库上传走 middleware，Next.js 对带 middleware 的请求默认只接受 10MB 包体；
+    // 这里放宽到 250 MiB，覆盖 200 MiB 单文件上限 + 表单字段余量。
+    middlewareClientMaxBodySize: "250mb"
   }
 };
 

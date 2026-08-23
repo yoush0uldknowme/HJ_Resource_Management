@@ -89,7 +89,13 @@ export function UploadForm({ categories }: { categories: Category[] }) {
   }
 
   return (
-    <form className="panel form" onSubmit={handleSubmit}>
+    <form
+      className="panel form"
+      onSubmit={handleSubmit}
+      method="post"
+      action="/api/library/upload"
+      encType="multipart/form-data"
+    >
       <div className="form-grid">
         <div className="field">
           <label htmlFor="file">选择文件</label>
